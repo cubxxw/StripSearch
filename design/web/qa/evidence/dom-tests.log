@@ -1,0 +1,136 @@
+TAP version 13
+# Subtest: no external scripts, stylesheets or font imports are required
+ok 1 - no external scripts, stylesheets or font imports are required
+  ---
+  duration_ms: 0.771667
+  type: 'test'
+  ...
+# Subtest: initial state: home view, report absent, export disabled
+ok 2 - initial state: home view, report absent, export disabled
+  ---
+  duration_ms: 186.872583
+  type: 'test'
+  ...
+# Subtest: follow-up composer cannot answer before a report and resets with a new research
+ok 3 - follow-up composer cannot answer before a report and resets with a new research
+  ---
+  duration_ms: 66.241375
+  type: 'test'
+  ...
+# Subtest: validation rejects a malformed https:// URL, exposes aria-invalid and focuses it
+ok 4 - validation rejects a malformed https:// URL, exposes aria-invalid and focuses it
+  ---
+  duration_ms: 33.416167
+  type: 'test'
+  ...
+# Subtest: validation rejects non-http schemes and bare hostnames
+ok 5 - validation rejects non-http schemes and bare hostnames
+  ---
+  duration_ms: 41.322083
+  type: 'test'
+  ...
+# Subtest: validation requires a question and focuses the question field
+ok 6 - validation requires a question and focuses the question field
+  ---
+  duration_ms: 32.588166
+  type: 'test'
+  ...
+# Subtest: a valid submission opens the app view with an unconfirmed identity and no report
+ok 7 - a valid submission opens the app view with an unconfirmed identity and no report
+  ---
+  duration_ms: 35.582875
+  type: 'test'
+  ...
+# Subtest: wrong identity candidate cannot start Lantern research
+ok 8 - wrong identity candidate cannot start Lantern research
+  ---
+  duration_ms: 32.669
+  type: 'test'
+  ...
+# Subtest: pause and resume use a single run timer and complete the scripted run
+ok 9 - pause and resume use a single run timer and complete the scripted run
+  ---
+  duration_ms: 39.075209
+  type: 'test'
+  ...
+# Subtest: new research clears messages, errors, report, selection and disables export
+ok 10 - new research clears messages, errors, report, selection and disables export
+  ---
+  duration_ms: 61.537125
+  type: 'test'
+  ...
+# Subtest: withdrawing S2 marks every dependent displayed statement and the export
+ok 11 - withdrawing S2 marks every dependent displayed statement and the export
+  ---
+  duration_ms: 50.620625
+  type: 'test'
+  ...
+# Subtest: restoring S2 restores every statement and clears the export marker
+ok 12 - restoring S2 restores every statement and clears the export marker
+  ---
+  duration_ms: 47.619083
+  type: 'test'
+  ...
+# Subtest: scripted responses given before withdrawal are marked pending review too
+ok 13 - scripted responses given before withdrawal are marked pending review too
+  ---
+  duration_ms: 52.807708
+  type: 'test'
+  ...
+# Subtest: arbitrary follow-ups state the scripted prototype boundary honestly
+ok 14 - arbitrary follow-ups state the scripted prototype boundary honestly
+  ---
+  duration_ms: 29.018375
+  type: 'test'
+  ...
+# Subtest: source filters work, empty state appears, and retry keeps S4 excluded
+ok 15 - source filters work, empty state appears, and retry keeps S4 excluded
+  ---
+  duration_ms: 41.439166
+  type: 'test'
+  ...
+# Subtest: home citations open a visible source drawer, trap focus and close with Escape
+ok 16 - home citations open a visible source drawer, trap focus and close with Escape
+  ---
+  duration_ms: 27.722792
+  type: 'test'
+  ...
+# Subtest: closed drawers are hidden, inert and out of the tab order
+ok 17 - closed drawers are hidden, inert and out of the tab order
+  ---
+  duration_ms: 22.566
+  type: 'test'
+  ...
+# Subtest: nav and example shortcuts open the full demo
+ok 18 - nav and example shortcuts open the full demo
+  ---
+  duration_ms: 28.2215
+  type: 'test'
+  ...
+# Subtest: narrow-screen app sources open a drawer and widening does not strand the inspector
+ok 19 - narrow-screen app sources open a drawer and widening does not strand the inspector
+  ---
+  duration_ms: 36.3305
+  type: 'test'
+  ...
+# Subtest: reduced-motion mode still completes the scripted run
+ok 20 - reduced-motion mode still completes the scripted run
+  ---
+  duration_ms: 35.18225
+  type: 'test'
+  ...
+# Subtest: markdown export carries the question and the synthetic badge
+ok 21 - markdown export carries the question and the synthetic badge
+  ---
+  duration_ms: 34.28075
+  type: 'test'
+  ...
+1..21
+# tests 21
+# suites 0
+# pass 21
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 943.724791
