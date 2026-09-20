@@ -1,0 +1,1411 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="StripSearch Evidence Terminal 交互设计原型。">
+  <title>StripSearch · Evidence Terminal</title>
+  <style>
+    @layer od-layout {
+      :where(.od-stack,.od-row,.od-row-top,.od-cluster,.od-grid,.od-field,.od-stat,.od-cell,.od-tile) > :where(*) { min-width: 0; }
+      .od-stack { display: flex; flex-direction: column; gap: var(--od-gap, 8px); }
+      .od-row { display: flex; align-items: center; gap: var(--od-gap, 8px); }
+      .od-row-top { display: flex; align-items: flex-start; gap: var(--od-gap, 8px); }
+      .od-cluster { display: flex; flex-wrap: wrap; align-items: center; gap: var(--od-gap, 8px); }
+      .od-fill { flex: 1 1 0; min-width: 0; }
+      .od-fixed { flex: none; }
+      .od-grid { display: grid; gap: var(--od-gap, 12px); grid-template-columns: repeat(var(--od-cols, 3), minmax(0, 1fr)); }
+      .od-stat, .od-field, .od-cell { display: grid; gap: var(--od-gap, 2px); }
+      :where(.od-stat,.od-field,.od-cell) > :where(*) { display: block; }
+      .od-tile { display: grid; grid-template-rows: auto 1fr; }
+      :where(.od-tile) > :where(*) { display: block; }
+      .od-media { display: block; width: 100%; height: auto; aspect-ratio: var(--od-ratio, auto); }
+      .od-media-cover { object-fit: cover; }
+      .od-truncate { display: block; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+      .od-clamp-2, .od-clamp-3 { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+      .od-clamp-2 { -webkit-line-clamp: 2; }
+      .od-clamp-3 { -webkit-line-clamp: 3; }
+      .od-lines-2 { min-height: calc(2 * 1.4em); }
+      .od-nowrap { white-space: nowrap; }
+      .od-keep { word-break: keep-all; overflow-wrap: anywhere; }
+      .od-screen { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; height: 100%; }
+      .od-scroll { overflow-y: auto; overscroll-behavior: contain; min-height: 0; }
+      .od-rail { display: flex; gap: var(--od-gap, 8px); overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; padding-inline: var(--od-rail-pad, 16px); scroll-padding-inline: var(--od-rail-pad, 16px); }
+      .od-rail::-webkit-scrollbar { display: none; }
+      :where(.od-rail) > :where(*) { flex: none; scroll-snap-align: start; }
+      :where(.od-rail) > :where(:last-child) { margin-inline-end: var(--od-rail-pad, 16px); }
+      .od-spacer { flex: none; visibility: hidden; pointer-events: none; }
+      .od-touch { min-width: 44px; min-height: 44px; }
+    }
+    /* /OD-LAYOUT-PRIMITIVES v1 */
+
+    :root {
+      --bg: #0a0a0a;
+      --surface: #111316;
+      --surface-2: #171a1d;
+      --surface-3: #1d2125;
+      --fg: #edf0ed;
+      --fg-2: #c7ccc8;
+      --muted: #919892;
+      --faint: #616862;
+      --border: #282d29;
+      --border-strong: #404741;
+      --accent: #00ff41;
+      --accent-dark: #003b12;
+      --accent-on: #061108;
+      --warning: #ffb800;
+      --danger: #ff6b6b;
+      --danger-dark: #351819;
+      --success: #8fe6a5;
+      --font-body: "IBM Plex Sans", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+      --font-mono: "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+      --radius: 5px;
+      --max: 1540px;
+      --shadow: 0 28px 88px rgba(0, 0, 0, .4);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; color-scheme: dark; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-body);
+      font-size: 16px;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+    body.drawer-open { overflow: hidden; }
+    body::before {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(90, 154, 90, .055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(90, 154, 90, .055) 1px, transparent 1px);
+      background-size: 32px 32px;
+      content: "";
+    }
+    button, input, textarea { font: inherit; }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    button { color: inherit; }
+    a { color: inherit; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+    ::selection { background: var(--accent); color: var(--accent-on); }
+    .skip-link {
+      position: fixed;
+      top: 8px;
+      left: 8px;
+      z-index: 120;
+      padding: 10px 14px;
+      background: var(--accent);
+      color: var(--accent-on);
+      transform: translateY(-160%);
+      transition: transform 160ms ease-out;
+    }
+    .skip-link:focus { transform: translateY(0); }
+    .container { width: min(calc(100% - 48px), var(--max)); margin-inline: auto; }
+    .mono {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.35;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .demo-mark {
+      min-height: 32px;
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border: 1px solid var(--border-strong);
+      background: var(--surface);
+      color: var(--fg-2);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.2;
+    }
+    .demo-mark::before {
+      width: 8px;
+      height: 8px;
+      margin-right: 8px;
+      background: var(--warning);
+      content: "";
+    }
+    .status-text { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+
+    .site-nav {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      border-bottom: 1px solid var(--border);
+      background: rgba(10, 10, 10, .96);
+    }
+    .nav-inner {
+      min-height: 68px;
+      display: grid;
+      grid-template-columns: minmax(200px, .8fr) minmax(360px, 1.2fr) auto;
+      align-items: center;
+      gap: 24px;
+    }
+    .brand {
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      font-weight: 720;
+      letter-spacing: -.02em;
+    }
+    .brand-mark {
+      width: 30px;
+      height: 30px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      font-family: var(--font-mono);
+      font-size: 12px;
+      clip-path: polygon(0 0, 78% 0, 100% 22%, 100% 100%, 22% 100%, 0 78%);
+    }
+    .nav-links { display: flex; align-items: center; justify-content: center; gap: 28px; }
+    .nav-links a {
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      color: var(--fg-2);
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .nav-links a:hover { color: var(--fg); }
+    .nav-actions { display: flex; justify-content: flex-end; gap: 8px; }
+    .nav-mobile { display: none; }
+    .button {
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 17px;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--fg);
+      text-decoration: none;
+      cursor: pointer;
+      transition: transform 100ms ease-out, background-color 160ms ease-out, color 160ms ease-out, border-color 160ms ease-out;
+    }
+    .button:hover { border-color: var(--accent); color: var(--accent); }
+    .button:active { transform: translateY(1px); }
+    .button.primary { border-color: var(--accent); background: var(--accent); color: var(--accent-on); font-weight: 760; }
+    .button.primary:hover { background: #5aff7d; color: var(--accent-on); }
+    .button.ghost { border-color: transparent; background: transparent; color: var(--fg-2); }
+    .button.danger { border-color: #743b3c; background: var(--danger-dark); color: var(--danger); }
+    .button[disabled] { opacity: .42; cursor: not-allowed; transform: none; }
+
+    .hero {
+      min-height: calc(100dvh - 68px);
+      display: grid;
+      grid-template-columns: minmax(300px, .8fr) minmax(520px, 1.2fr);
+      gap: 56px;
+      align-items: center;
+      padding-block: 48px;
+    }
+    .hero-copy { align-self: stretch; display: flex; flex-direction: column; justify-content: space-between; padding-block: 12px; }
+    .hero-copy-top { max-width: 650px; }
+    .command {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: 13px;
+    }
+    .command::before { color: var(--accent); content: ">"; }
+    .hero h1 {
+      margin: 28px 0 20px;
+      max-width: 720px;
+      font-size: clamp(54px, 6.2vw, 102px);
+      line-height: .98;
+      letter-spacing: -.06em;
+      font-weight: 650;
+    }
+    .hero-lead { max-width: 600px; margin: 0; color: var(--fg-2); font-size: clamp(18px, 1.55vw, 22px); }
+    .hero-proof {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      margin-top: 36px;
+      border: 1px solid var(--border);
+      background: var(--border);
+    }
+    .hero-proof div { min-height: 92px; padding: 16px; background: var(--bg); }
+    .hero-proof strong, .hero-proof span { display: block; }
+    .hero-proof strong { margin-top: 8px; font-size: 15px; }
+    .hero-proof span { color: var(--muted); font-size: 13px; }
+    .composer-wrap { position: relative; }
+    .composer-wrap::before {
+      position: absolute;
+      top: -12px;
+      right: -12px;
+      width: 72px;
+      height: 72px;
+      border-top: 1px solid var(--accent);
+      border-right: 1px solid var(--accent);
+      pointer-events: none;
+      content: "";
+    }
+    .composer {
+      border: 1px solid var(--border-strong);
+      background: rgba(17, 19, 22, .98);
+      box-shadow: var(--shadow);
+    }
+    .composer-head {
+      min-height: 64px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    .composer-head strong, .composer-head span { display: block; }
+    .composer-head span { color: var(--muted); font-family: var(--font-mono); font-size: 12px; }
+    .composer-index { color: var(--accent) !important; }
+    .composer-body { padding: 20px; }
+    .field { display: grid; gap: 8px; margin-bottom: 18px; }
+    .field label { color: var(--fg-2); font-size: 14px; font-weight: 680; }
+    .required { color: var(--accent); }
+    input, textarea {
+      width: 100%;
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius);
+      background: var(--bg);
+      color: var(--fg);
+      transition: border-color 150ms ease-out, box-shadow 150ms ease-out;
+    }
+    input { min-height: 50px; padding: 0 14px; }
+    textarea { min-height: 128px; padding: 13px 14px; resize: vertical; line-height: 1.55; }
+    input:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0, 255, 65, .12); outline: none; }
+    input::placeholder, textarea::placeholder { color: #737a74; }
+    .helper { color: var(--muted); font-size: 13px; }
+    .error-text { min-height: 20px; color: var(--danger); font-size: 13px; }
+    .example-rail { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+    .example-rail::-webkit-scrollbar { display: none; }
+    .example {
+      min-height: 44px;
+      flex: 0 0 auto;
+      max-width: 250px;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: transparent;
+      color: var(--fg-2);
+      text-align: left;
+      cursor: pointer;
+    }
+    .example:hover { border-color: var(--accent); color: var(--accent); }
+    details.scope { margin: 18px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    details.scope summary {
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      color: var(--fg-2);
+    }
+    details.scope summary::marker { color: var(--accent); }
+    .mode-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding-bottom: 16px; }
+    .mode {
+      min-height: 48px;
+      padding: 8px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .mode[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-dark); color: var(--accent); }
+    .composer-actions { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+    .form-status { color: var(--muted); font-size: 13px; }
+
+    .section { padding-block: 104px; border-top: 1px solid var(--border); }
+    .section-heading { display: grid; grid-template-columns: 130px minmax(0, 760px); gap: 32px; margin-bottom: 52px; }
+    .section-heading h2 { margin: 0 0 14px; font-size: clamp(36px, 5vw, 70px); line-height: 1.05; letter-spacing: -.05em; font-weight: 620; }
+    .section-heading p { max-width: 680px; margin: 0; color: var(--fg-2); }
+    .section-code { color: var(--accent); font-family: var(--font-mono); font-size: 13px; padding-top: 10px; }
+
+    .evidence-path {
+      display: grid;
+      grid-template-columns: minmax(250px, .75fr) minmax(420px, 1.25fr) minmax(300px, .9fr);
+      gap: 0;
+      border: 1px solid var(--border-strong);
+      background: var(--surface);
+    }
+    .path-column { min-height: 450px; padding: 28px; border-right: 1px solid var(--border); }
+    .path-column:last-child { border-right: 0; }
+    .path-column h3 { margin: 18px 0 12px; font-size: 28px; line-height: 1.2; letter-spacing: -.025em; }
+    .path-column p { color: var(--fg-2); }
+    .prompt-block {
+      margin-top: 26px;
+      padding: 18px;
+      border-left: 2px solid var(--accent);
+      background: var(--bg);
+      color: var(--fg);
+    }
+    .track { position: relative; margin-top: 26px; }
+    .track::before { position: absolute; top: 20px; bottom: 20px; left: 26px; width: 1px; background: var(--border-strong); content: ""; }
+    .track-node {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      min-height: 88px;
+      display: grid;
+      grid-template-columns: 54px 1fr auto;
+      gap: 14px;
+      align-items: center;
+      padding: 10px 0;
+      border: 0;
+      border-bottom: 1px solid var(--border);
+      background: transparent;
+      color: var(--fg-2);
+      text-align: left;
+      cursor: pointer;
+    }
+    .node-id {
+      width: 52px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--border-strong);
+      background: var(--surface);
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+    .track-node[aria-pressed="true"] .node-id { border-color: var(--accent); color: var(--accent); }
+    .track-node strong, .track-node small { display: block; }
+    .track-node small { margin-top: 3px; color: var(--muted); }
+    .node-type { color: var(--faint); font-family: var(--font-mono); font-size: 11px; }
+    .track-node[aria-pressed="true"] .node-type { color: var(--accent); }
+    .claim {
+      margin-top: 26px;
+      padding: 20px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg);
+    }
+    .claim[data-validity="review"] { border-color: var(--danger); background: var(--danger-dark); }
+    .claim strong { display: block; margin-bottom: 9px; font-size: 18px; }
+    .claim-state { display: block; margin-top: 14px; color: var(--success); font-family: var(--font-mono); font-size: 12px; }
+    .claim[data-validity="review"] .claim-state { color: var(--danger); }
+    .citation {
+      min-width: 44px;
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 8px;
+      border: 0;
+      background: transparent;
+      color: var(--accent);
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 760;
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 4px;
+    }
+    .source-preview { min-height: 150px; margin-top: 24px; padding: 16px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); color: var(--fg-2); }
+    .source-preview strong { display: block; color: var(--fg); margin: 7px 0; }
+    .source-preview span { color: var(--muted); font-size: 13px; }
+    .example-entry {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 28px;
+      align-items: center;
+      padding: 30px 0;
+      border-top: 1px solid var(--border-strong);
+      border-bottom: 1px solid var(--border-strong);
+    }
+    .example-entry h3 { margin: 8px 0; font-size: 30px; }
+    .example-entry p { max-width: 720px; margin: 0; color: var(--muted); }
+
+    .workspace-section { padding: 64px 0 104px; border-top: 1px solid var(--border); }
+    .workspace-intro { display: flex; justify-content: space-between; align-items: end; gap: 28px; margin-bottom: 24px; }
+    .workspace-intro h2 { margin: 12px 0 8px; font-size: clamp(36px, 5vw, 62px); line-height: 1.04; letter-spacing: -.05em; }
+    .workspace-intro p { max-width: 660px; margin: 0; color: var(--fg-2); }
+    .workspace {
+      min-height: 790px;
+      display: grid;
+      grid-template-columns: 216px minmax(0, 1fr) 334px;
+      border: 1px solid var(--border-strong);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+    .workspace.inspector-collapsed { grid-template-columns: 216px minmax(0, 1fr) 0; }
+    .workspace.inspector-collapsed .source-inspector { opacity: 0; overflow: hidden; pointer-events: none; border-left: 0; }
+    .history-rail { background: var(--bg); border-right: 1px solid var(--border); }
+    .rail-head { padding: 14px; border-bottom: 1px solid var(--border); }
+    .rail-head .button { width: 100%; }
+    .history-item {
+      width: 100%;
+      min-height: 88px;
+      padding: 14px;
+      border: 0;
+      border-bottom: 1px solid var(--border);
+      background: transparent;
+      color: var(--fg-2);
+      text-align: left;
+      cursor: pointer;
+    }
+    .history-item[aria-current="true"] { background: var(--accent-dark); box-shadow: inset 2px 0 0 var(--accent); }
+    .history-item strong, .history-item small { display: block; }
+    .history-item small { margin-top: 5px; color: var(--muted); }
+    .work-main { min-width: 0; background: var(--surface); }
+    .work-header {
+      min-height: 68px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 18px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .work-title strong, .work-title span { display: block; }
+    .work-title span { color: var(--muted); font-family: var(--font-mono); font-size: 11px; }
+    .work-actions { display: flex; gap: 8px; }
+    .work-actions .button { padding-inline: 12px; }
+    .work-body { min-height: 650px; max-height: 790px; overflow-y: auto; padding: 26px; }
+    .stage-panel { max-width: 880px; margin: 0 auto 26px; }
+    .identity-panel { border: 1px solid var(--border-strong); background: var(--bg); }
+    .panel-bar { display: flex; justify-content: space-between; gap: 16px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+    .panel-bar span:first-child { color: var(--accent); }
+    .panel-content { padding: 22px; }
+    .identity-panel h3 { margin: 0 0 8px; font-size: 25px; }
+    .identity-panel p { margin: 0 0 18px; color: var(--fg-2); }
+    .candidate { display: grid; grid-template-columns: auto 1fr; gap: 12px; padding: 15px 0; border-top: 1px solid var(--border); cursor: pointer; }
+    .candidate input { width: 20px; min-height: 20px; margin-top: 3px; accent-color: var(--accent); }
+    .candidate strong, .candidate span { display: block; }
+    .candidate span { color: var(--muted); font-size: 13px; }
+    .identity-note { padding: 12px 0; color: var(--accent); font-size: 13px; }
+    .activity-panel { border: 1px solid var(--border-strong); background: var(--bg); }
+    .activity-item { border-top: 1px solid var(--border); }
+    .activity-item summary { min-height: 58px; display: grid; grid-template-columns: 42px 1fr auto; gap: 12px; align-items: center; padding: 0 14px; cursor: pointer; }
+    .activity-item summary::marker { display: none; }
+    .activity-index { color: var(--faint); font-family: var(--font-mono); font-size: 12px; }
+    .activity-label { color: var(--fg-2); }
+    .activity-tag { color: var(--muted); font-family: var(--font-mono); font-size: 11px; }
+    .activity-item[data-status="done"] .activity-index, .activity-item[data-status="done"] .activity-tag { color: var(--success); }
+    .activity-item[data-status="active"] .activity-index, .activity-item[data-status="active"] .activity-tag { color: var(--accent); }
+    .activity-item[data-status="error"] .activity-index, .activity-item[data-status="error"] .activity-tag { color: var(--danger); }
+    .activity-detail { padding: 0 54px 18px; color: var(--muted); font-size: 14px; }
+    .report { max-width: 880px; margin: 0 auto; }
+    .report-header { padding: 28px 0 24px; border-top: 1px solid var(--border-strong); border-bottom: 1px solid var(--border-strong); }
+    .report-header h3 { margin: 12px 0 8px; font-size: clamp(32px, 4vw, 50px); line-height: 1.1; letter-spacing: -.04em; }
+    .report-header p { margin: 0; color: var(--fg-2); }
+    .report-section { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 24px; padding: 26px 0; border-bottom: 1px solid var(--border); }
+    .report-section h4 { margin: 0; color: var(--fg); font-size: 15px; }
+    .report-copy > p { margin: 0 0 14px; color: var(--fg-2); }
+    .timeline { display: grid; gap: 0; }
+    .timeline-entry { display: grid; grid-template-columns: 82px 1fr; gap: 18px; padding: 0 0 20px; }
+    .timeline-entry time { color: var(--accent); font-family: var(--font-mono); font-size: 12px; }
+    .timeline-entry strong, .timeline-entry span { display: block; }
+    .timeline-entry span { color: var(--muted); font-size: 14px; }
+    .finding { padding: 15px 0; border-top: 1px solid var(--border); }
+    .finding:first-child { border-top: 0; padding-top: 0; }
+    .finding strong { display: block; margin-bottom: 6px; }
+    .finding p { margin: 0; }
+    .finding[data-validity="review"] { padding-left: 14px; border-left: 2px solid var(--danger); background: var(--danger-dark); }
+    .finding-status { display: block; margin-top: 9px; color: var(--success); font-family: var(--font-mono); font-size: 11px; }
+    .finding[data-validity="review"] .finding-status { color: var(--danger); }
+    .followups { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .prompt-chip {
+      min-height: 44px;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--fg-2);
+      cursor: pointer;
+      text-align: left;
+    }
+    .prompt-chip:hover { border-color: var(--accent); color: var(--accent); }
+    .chat-log { display: grid; gap: 12px; margin-top: 20px; }
+    .message { max-width: 84%; padding: 14px 16px; border: 1px solid var(--border); background: var(--surface-2); }
+    .message.user { margin-left: auto; border-color: var(--accent-dark); background: var(--accent-dark); }
+    .message small { display: block; margin-bottom: 5px; color: var(--muted); }
+    .chat-form { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 14px; }
+    .chat-form input { min-height: 48px; }
+    .source-inspector { min-width: 0; border-left: 1px solid var(--border); background: var(--bg); transition: opacity 180ms ease-out; }
+    .inspector-head { min-height: 68px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+    .inspector-head strong { font-size: 14px; }
+    .inspector-close { min-width: 44px; min-height: 44px; border: 0; background: transparent; color: var(--muted); cursor: pointer; }
+    .source-filters { display: flex; gap: 6px; padding: 12px; overflow-x: auto; border-bottom: 1px solid var(--border); }
+    .filter {
+      min-height: 40px;
+      flex: 0 0 auto;
+      padding: 0 10px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .filter[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-dark); color: var(--accent); }
+    .source-list { max-height: 276px; overflow-y: auto; border-bottom: 1px solid var(--border); }
+    .source-row {
+      width: 100%;
+      min-height: 72px;
+      display: grid;
+      grid-template-columns: 38px 1fr;
+      gap: 10px;
+      padding: 12px 14px;
+      border: 0;
+      border-bottom: 1px solid var(--border);
+      background: transparent;
+      color: var(--fg-2);
+      text-align: left;
+      cursor: pointer;
+    }
+    .source-row[aria-selected="true"] { background: var(--accent-dark); }
+    .source-row[hidden] { display: none; }
+    .source-code { color: var(--accent); font-family: var(--font-mono); font-size: 12px; }
+    .source-row strong, .source-row span { display: block; }
+    .source-row strong { font-size: 13px; }
+    .source-row span { margin-top: 3px; color: var(--muted); font-size: 12px; }
+    .source-row[data-status="unavailable"] .source-code, .source-row[data-status="withdrawn"] .source-code { color: var(--danger); }
+    .source-detail { padding: 18px; }
+    .source-detail h3 { margin: 10px 0 4px; font-size: 21px; }
+    .source-quote { padding: 14px; border-left: 2px solid var(--accent); background: var(--surface-2); color: var(--fg-2); }
+    .source-detail dl { margin: 18px 0; }
+    .source-detail dl div { padding: 10px 0; border-top: 1px solid var(--border); }
+    .source-detail dt { color: var(--muted); font-size: 12px; }
+    .source-detail dd { margin: 4px 0 0; color: var(--fg-2); font-size: 14px; }
+    .source-actions { display: grid; gap: 8px; }
+    .source-actions .button { width: 100%; }
+    .retry-status { min-height: 20px; margin-top: 8px; color: var(--danger); font-size: 13px; }
+    .mobile-source-trigger { display: none; }
+    .hidden { display: none !important; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+    .drawer-backdrop { position: fixed; inset: 0; z-index: 60; background: rgba(0, 0, 0, .74); opacity: 0; pointer-events: none; transition: opacity 180ms ease-out; }
+    .drawer-backdrop.open { opacity: 1; pointer-events: auto; }
+    .mobile-drawer {
+      position: fixed;
+      inset: 0 0 0 auto;
+      z-index: 70;
+      width: min(88vw, 400px);
+      padding: 20px;
+      border-left: 1px solid var(--border-strong);
+      background: var(--bg);
+      transform: translateX(104%);
+      transition: transform 240ms ease-out;
+      overflow-y: auto;
+    }
+    .mobile-drawer.open { transform: translateX(0); }
+    .mobile-drawer nav { display: grid; gap: 8px; margin-top: 24px; }
+    .mobile-drawer nav a { min-height: 48px; display: flex; align-items: center; padding: 0 12px; border-bottom: 1px solid var(--border); text-decoration: none; }
+    .mobile-source-drawer { display: none; }
+    .site-footer { padding: 36px 0 54px; border-top: 1px solid var(--border); color: var(--muted); }
+    .footer-inner { display: flex; justify-content: space-between; gap: 24px; }
+    .footer-inner p { margin: 0; }
+
+    @media (max-width: 1220px) {
+      .hero { grid-template-columns: minmax(280px, .72fr) minmax(500px, 1.28fr); gap: 36px; }
+      .workspace, .workspace.inspector-collapsed { grid-template-columns: 200px minmax(0, 1fr); }
+      .workspace > .source-inspector { display: none; }
+      .mobile-source-trigger { display: inline-flex; }
+      .mobile-source-drawer { display: block; }
+    }
+    @media (max-width: 940px) {
+      .container { width: min(calc(100% - 32px), var(--max)); }
+      .nav-inner { grid-template-columns: 1fr auto; }
+      .nav-links, .nav-actions .github-link { display: none; }
+      .nav-mobile { display: inline-flex; }
+      .hero { min-height: auto; grid-template-columns: 1fr; padding-block: 40px 68px; }
+      .hero h1 { max-width: 760px; font-size: clamp(50px, 10vw, 82px); }
+      .hero-proof { max-width: 680px; }
+      .composer-wrap::before { display: none; }
+      .section-heading { grid-template-columns: 1fr; gap: 10px; }
+      .section-code { padding-top: 0; }
+      .evidence-path { grid-template-columns: 1fr; }
+      .path-column { min-height: auto; border-right: 0; border-bottom: 1px solid var(--border); }
+      .path-column:last-child { border-bottom: 0; }
+      .workspace { grid-template-columns: 1fr; }
+      .history-rail { display: none; }
+      .workspace-intro { flex-direction: column; align-items: start; }
+      .work-body { max-height: none; }
+      .report-section { grid-template-columns: 1fr; gap: 12px; }
+    }
+    @media (max-width: 640px) {
+      .container { width: min(calc(100% - 24px), var(--max)); }
+      .nav-inner { min-height: 60px; }
+      .hero { padding-block: 32px 54px; }
+      .hero h1 { margin-top: 20px; font-size: clamp(46px, 13vw, 64px); }
+      .hero-lead { font-size: 17px; }
+      .hero-proof { grid-template-columns: 1fr; }
+      .composer-head { align-items: start; flex-direction: column; }
+      .composer-body { padding: 16px 14px; }
+      .mode-row { grid-template-columns: 1fr; }
+      .composer-actions { align-items: stretch; flex-direction: column-reverse; }
+      .composer-actions .button { width: 100%; }
+      .section { padding-block: 72px; }
+      .path-column { padding: 22px 16px; }
+      .track-node { grid-template-columns: 52px 1fr; }
+      .node-type { grid-column: 2; }
+      .example-entry { grid-template-columns: 1fr; }
+      .example-entry .button { width: 100%; }
+      .workspace-section { padding-top: 48px; }
+      .workspace { min-height: 0; border-left: 0; border-right: 0; }
+      .work-header { align-items: start; flex-direction: column; padding: 14px; }
+      .work-actions { width: 100%; overflow-x: auto; }
+      .work-actions .button { flex: 0 0 auto; }
+      .work-body { padding: 16px 14px 22px; }
+      .panel-content { padding: 18px 14px; }
+      .activity-item summary { grid-template-columns: 34px 1fr; }
+      .activity-tag { grid-column: 2; }
+      .activity-detail { padding-left: 48px; }
+      .report-header h3 { font-size: 32px; }
+      .timeline-entry { grid-template-columns: 70px 1fr; gap: 12px; }
+      .chat-form { grid-template-columns: 1fr; }
+      .chat-form .button { width: 100%; }
+      .message { max-width: 94%; }
+      .footer-inner { flex-direction: column; }
+    }
+    @media (hover: hover) {
+      .track-node:hover, .history-item:hover, .source-row:hover { background: var(--surface-2); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到主要内容</a>
+
+  <header class="site-nav">
+    <div class="container nav-inner">
+      <a class="brand" href="#top" aria-label="StripSearch 首页">
+        <span class="brand-mark" aria-hidden="true">SS</span>
+        <span>StripSearch</span>
+      </a>
+      <nav class="nav-links" aria-label="主要导航">
+        <a href="#method">工作方式</a>
+        <a href="#example">研究示例</a>
+        <a href="#workspace">Chat 工作台</a>
+      </nav>
+      <div class="nav-actions">
+        <a class="button ghost github-link" href="https://github.com/cubxxw/StripSearch" target="_blank" rel="noreferrer">GitHub</a>
+        <button class="button nav-mobile" id="open-menu" type="button" aria-haspopup="dialog" aria-controls="mobile-menu">菜单</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="container hero" id="top" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <div class="hero-copy-top">
+          <span class="demo-mark">交互演示 · 合成样例</span>
+          <div class="command" style="margin-top: 24px">scope public-work-only</div>
+          <h1 id="hero-title">理解一个人，沿着证据走。</h1>
+          <p class="hero-lead">从公开经历、作品与行动理解一个人。每项判断都能回到证据，也明确说明不能确定什么。</p>
+          <div class="hero-proof" aria-label="研究边界">
+            <div><span class="mono">Allowed</span><strong>采访准备 · 作品研究 · 授权自我研究</strong></div>
+            <div><span class="mono">Excluded</span><strong>人格评分 · 招聘筛选 · 私人调查</strong></div>
+          </div>
+        </div>
+        <div class="command">research the person / trace the evidence</div>
+      </div>
+
+      <div class="composer-wrap">
+        <form class="composer" id="research-form" novalidate>
+          <div class="composer-head">
+            <div><span>Research composer</span><strong>定义研究边界</strong></div>
+            <span class="composer-index">INPUT / 01</span>
+          </div>
+          <div class="composer-body">
+            <div class="field">
+              <label for="profile-url">已知公开主页 URL</label>
+              <input id="profile-url" name="profile" type="url" inputmode="url" autocomplete="url" placeholder="https://linzhou.example" aria-describedby="profile-help profile-error">
+              <span class="helper" id="profile-help">可选。只用于缩小同名候选，本原型不会真实访问。</span>
+              <span class="error-text" id="profile-error" role="alert"></span>
+            </div>
+
+            <div class="field">
+              <label for="research-question">研究问题 <span class="required">必填</span></label>
+              <textarea id="research-question" name="question" placeholder="例如：林舟在 Lantern 项目中如何把可解释性从理念变成具体设计决策？" aria-describedby="question-error"></textarea>
+              <span class="error-text" id="question-error" role="alert"></span>
+            </div>
+
+            <div class="field">
+              <span class="helper">填入一个合成示例</span>
+              <div class="example-rail" aria-label="示例问题">
+                <button class="example" type="button" data-question="林舟在 Lantern 中如何处理来源冲突？">来源冲突如何处理？</button>
+                <button class="example" type="button" data-question="Lantern 的界面怎样区分事实与分析推断？">事实与推断怎样区分？</button>
+                <button class="example" type="button" data-question="林舟的公开作品在 2022 到 2025 年发生了什么变化？">作品方向如何变化？</button>
+              </div>
+            </div>
+
+            <details class="scope">
+              <summary><span>研究范围与模式</span><span class="mono">progressive</span></summary>
+              <div class="mode-row" role="group" aria-label="研究模式">
+                <button class="mode" type="button" data-mode="focused" aria-pressed="true">聚焦作品</button>
+                <button class="mode" type="button" data-mode="timeline" aria-pressed="false">时间脉络</button>
+                <button class="mode" type="button" data-mode="counter" aria-pressed="false">反证优先</button>
+              </div>
+            </details>
+
+            <div class="composer-actions">
+              <span class="form-status" id="form-status" role="status">不会连接网络或运行真实模型。</span>
+              <button class="button primary" type="submit">预览研究流程</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <section class="section" id="method" aria-labelledby="method-title">
+      <div class="container">
+        <div class="section-heading">
+          <div class="section-code">MECHANISM / A</div>
+          <div>
+            <h2 id="method-title">问题进入，证据留下轨迹</h2>
+            <p>StripSearch 不把来源藏在报告末尾。公开记录、支持范围与限制直接连接到它所支撑的结论。</p>
+          </div>
+        </div>
+
+        <div class="evidence-path">
+          <article class="path-column">
+            <span class="mono">Question</span>
+            <h3>林舟如何把可解释性变成具体设计决策？</h3>
+            <div class="prompt-block">范围限定：公开项目 Lantern。排除人格、动机与私人生活判断。</div>
+          </article>
+
+          <article class="path-column">
+            <span class="mono">Public records</span>
+            <div class="track" role="group" aria-label="编号证据轨道">
+              <button class="track-node" type="button" data-source="S1" aria-pressed="false">
+                <span class="node-id">S1</span><span><strong>个人主页</strong><small>本人自述 · 2025-02-18</small></span><span class="node-type">SELF</span>
+              </button>
+              <button class="track-node" type="button" data-source="S2" aria-pressed="true">
+                <span class="node-id">S2</span><span><strong>Lantern 发布记录</strong><small>实际作品 · 2024-11-06</small></span><span class="node-type">WORK</span>
+              </button>
+              <button class="track-node" type="button" data-source="S3" aria-pressed="false">
+                <span class="node-id">S3</span><span><strong>North Window 访谈</strong><small>第三方观察 · 2025-01-12</small></span><span class="node-type">THIRD</span>
+              </button>
+              <button class="track-node" type="button" data-source="S4" aria-pressed="false">
+                <span class="node-id">S4</span><span><strong>旧版项目日志</strong><small>无法访问 · 未纳入支持</small></span><span class="node-type">UNKNOWN</span>
+              </button>
+            </div>
+          </article>
+
+          <article class="path-column">
+            <span class="mono">Checkable conclusion</span>
+            <div class="claim" id="mechanism-claim" data-validity="supported">
+              <strong>可解释性被落实为界面约束</strong>
+              <p>公开记录支持这样的分析：林舟通过内容分区、相邻引用与反证保留，让判断保持可检查。</p>
+              <button class="citation" type="button" data-source="S1">[S1]</button>
+              <button class="citation" type="button" data-source="S2">[S2]</button>
+              <button class="citation" type="button" data-source="S3">[S3]</button>
+              <span class="claim-state" id="mechanism-state">SUPPORTED / 关键来源有效</span>
+            </div>
+            <div class="source-preview" id="mechanism-preview" aria-live="polite">
+              <span class="mono">S2 / 实际作品</span>
+              <strong>Lantern 发布记录</strong>
+              <p>“事实、分析推断和未知状态分别呈现，引用放在它所支持的句子旁。”</p>
+              <span>支持界面实现，不能证明长期使用效果。</span>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="example" aria-labelledby="example-title">
+      <div class="container">
+        <div class="section-heading">
+          <div class="section-code">SYNTHETIC / 01</div>
+          <div>
+            <h2 id="example-title">完整样例不是成功状态截图</h2>
+            <p>它包含同名候选确认、可展开活动、来源异常、证据撤下、脚本追问与真实本地 Markdown 下载。</p>
+          </div>
+        </div>
+        <div class="example-entry">
+          <div>
+            <span class="mono">Open source prototype</span>
+            <h3>林舟 / Lantern 合成研究</h3>
+            <p>没有真实检索、模型推理或后台服务。所有内容与状态均可在本地 HTML、CSS、JavaScript 中检查。</p>
+          </div>
+          <button class="button primary" id="open-example" type="button">打开完整样例</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="workspace-section" id="workspace" aria-labelledby="workspace-title">
+      <div class="container">
+        <div class="workspace-intro">
+          <div>
+            <span class="demo-mark">交互演示 · 合成样例</span>
+            <h2 id="workspace-title">Evidence Terminal</h2>
+            <p>桌面使用稳定的倒 L chrome：左侧研究历史，中间 Chat 与报告，右侧来源检查器。移动端收敛为单列与两个 drawer。</p>
+          </div>
+          <button class="button mobile-source-trigger" id="open-mobile-history" type="button">研究历史</button>
+        </div>
+
+        <div class="workspace" id="workspace-shell">
+          <aside class="history-rail" aria-label="研究历史">
+            <div class="rail-head"><button class="button" id="new-research" type="button">新建研究</button></div>
+            <button class="history-item" type="button" aria-current="true" data-history="lantern"><strong>林舟 / Lantern</strong><small>完整样例 · 4 个来源</small></button>
+            <button class="history-item" type="button" aria-current="false" data-history="empty"><strong>未命名研究</strong><small>空白草稿</small></button>
+          </aside>
+
+          <section class="work-main" aria-label="Chat 研究与报告">
+            <header class="work-header">
+              <div class="work-title"><strong>林舟 / Lantern</strong><span id="desk-state">COMPLETE / 报告可检查</span></div>
+              <div class="work-actions">
+                <button class="button" id="stop-run" type="button" disabled>停止</button>
+                <button class="button hidden" id="resume-run" type="button">继续</button>
+                <button class="button" id="download-md" type="button">下载 Markdown</button>
+                <button class="button mobile-source-trigger" id="open-mobile-sources" type="button">来源</button>
+                <button class="button" id="toggle-inspector" type="button" aria-pressed="false">收起来源</button>
+              </div>
+            </header>
+
+            <div class="work-body" id="work-body">
+              <section class="stage-panel identity-panel hidden" id="identity-panel" aria-labelledby="identity-title">
+                <div class="panel-bar mono"><span>ID MATCH / REQUIRED</span><span>同名候选不可合并</span></div>
+                <div class="panel-content">
+                  <h3 id="identity-title">请选择研究对象</h3>
+                  <p>发现两个同名公开候选。只有你能确认哪一个与问题相关。</p>
+                  <label class="candidate">
+                    <input type="radio" name="candidate" value="lantern" checked>
+                    <span><strong>林舟</strong><span>独立研究者、产品设计师 · 公开关联 Lantern</span></span>
+                  </label>
+                  <label class="candidate">
+                    <input type="radio" name="candidate" value="materials">
+                    <span><strong>林舟</strong><span>能源材料论文作者 · 未发现 Lantern 关联</span></span>
+                  </label>
+                  <div class="identity-note" id="identity-note">候选保持独立，确认后才进入脚本研究。</div>
+                  <button class="button primary" id="confirm-identity" type="button">确认此候选</button>
+                </div>
+              </section>
+
+              <section class="stage-panel activity-panel hidden" id="activity-panel" aria-labelledby="activity-title">
+                <div class="panel-bar mono"><span id="activity-title">OBSERVABLE ACTIVITY</span><span id="activity-state">等待确认</span></div>
+                <details class="activity-item" data-step="0" data-status="pending">
+                  <summary><span class="activity-index">01</span><span class="activity-label">解析公开主页</span><span class="activity-tag">待处理</span></summary>
+                  <div class="activity-detail">读取合成主页的公开身份与 Lantern 关联。只展示可观察步骤，不展示隐式思维链。</div>
+                </details>
+                <details class="activity-item" data-step="1" data-status="pending">
+                  <summary><span class="activity-index">02</span><span class="activity-label">核对 Lantern 作品记录</span><span class="activity-tag">待处理</span></summary>
+                  <div class="activity-detail">检查 S2 中事实、推断、未知的界面结构与发布时间。</div>
+                </details>
+                <details class="activity-item" data-step="2" data-status="pending">
+                  <summary><span class="activity-index">03</span><span class="activity-label">对齐第三方观察</span><span class="activity-tag">待处理</span></summary>
+                  <div class="activity-detail">比较 S3 的访谈描述，并把单次观察限制保留在报告中。</div>
+                </details>
+                <details class="activity-item" data-step="3" data-status="pending">
+                  <summary><span class="activity-index">04</span><span class="activity-label">检查旧版项目日志</span><span class="activity-tag">待处理</span></summary>
+                  <div class="activity-detail">S4 当前无法访问，不计入有效支持。<button class="button" id="retry-source" type="button" style="margin-top: 10px">重试访问</button><div class="retry-status" id="retry-status" role="status"></div></div>
+                </details>
+                <details class="activity-item" data-step="4" data-status="pending">
+                  <summary><span class="activity-index">05</span><span class="activity-label">组织可核查回答</span><span class="activity-tag">待处理</span></summary>
+                  <div class="activity-detail">把已支持事实、分析推断、反证和未知分开呈现，并附相邻引用。</div>
+                </details>
+              </section>
+
+              <article class="report" id="report">
+                <header class="report-header">
+                  <span class="mono" style="color: var(--accent)">Synthetic report / S-001</span>
+                  <h3>林舟如何把可解释性变成设计决策</h3>
+                  <p>交互演示 · 合成样例。以下内容不来自真实检索，也不构成人物评价。</p>
+                </header>
+
+                <section class="report-section">
+                  <h4>人物摘要</h4>
+                  <div class="report-copy"><p>在合成公开记录中，林舟是一名独立研究者与产品设计师，持续通过 Lantern 探索协作研究中的来源、判断与未知状态。</p></div>
+                </section>
+
+                <section class="report-section">
+                  <h4>作品与事件时间线</h4>
+                  <div class="report-copy timeline">
+                    <div class="timeline-entry"><time>2022-04</time><div><strong>开始公开讨论解释界面</strong><span>早期笔记把“知道结论”与“看见依据”区分开。</span></div></div>
+                    <div class="timeline-entry"><time>2024-11</time><div><strong>Lantern 发布 Evidence Threads</strong><span>实际作品把事实、推断和未知拆为独立内容区。<button class="citation" type="button" data-source="S2">[S2]</button></span></div></div>
+                    <div class="timeline-entry"><time>2025-01</time><div><strong>第三方访谈记录反证要求</strong><span>观察者描述林舟在一次评审中要求保留不支持原结论的材料。<button class="citation" type="button" data-source="S3">[S3]</button></span></div></div>
+                  </div>
+                </section>
+
+                <section class="report-section">
+                  <h4>已支持事实</h4>
+                  <div class="report-copy">
+                    <div class="finding" id="finding-s2" data-validity="supported">
+                      <strong>Lantern 的公开界面区分事实、分析推断与未知。</strong>
+                      <p>Evidence Threads 发布记录展示了三种信息区块，并把引用放在结论相邻位置。<button class="citation" type="button" data-source="S2">[S2]</button></p>
+                      <span class="finding-status" id="finding-s2-status">VALID / 来源有效</span>
+                    </div>
+                    <div class="finding">
+                      <strong>林舟公开主张判断应能回到材料。</strong>
+                      <p>个人主页将可解释性描述为“让读者看见判断经过哪些公开材料”。<button class="citation" type="button" data-source="S1">[S1]</button></p>
+                      <span class="finding-status">VALID / 本人自述</span>
+                    </div>
+                  </div>
+                </section>
+
+                <section class="report-section">
+                  <h4>分析推断</h4>
+                  <div class="report-copy"><p>这些材料共同支持一个有限推断：林舟倾向于把可解释性当作界面结构约束，而不是报告末尾的来源附录。该推断依赖本人自述与实际作品，不等同于长期效果证明。<button class="citation" type="button" data-source="S1">[S1]</button><button class="citation" type="button" data-source="S2">[S2]</button></p></div>
+                </section>
+
+                <section class="report-section">
+                  <h4>反证与未知</h4>
+                  <div class="report-copy"><p>S3 只记录一次评审，不能证明同一规则在所有 Lantern 决策中持续执行。S4 当前无法访问，因此不会被用于支持任何结论。<button class="citation" type="button" data-source="S3">[S3]</button><button class="citation" type="button" data-source="S4">[S4]</button></p></div>
+                </section>
+
+                <section class="report-section">
+                  <h4>继续追问</h4>
+                  <div class="report-copy">
+                    <p>以下按钮运行明确的脚本答案。任意输入不会假装已被模型理解。</p>
+                    <div class="followups">
+                      <button class="prompt-chip" type="button" data-prompt="self">哪些结论只依赖本人自述？</button>
+                      <button class="prompt-chip" type="button" data-prompt="withdraw">如果 S2 撤下，哪些结论需要复核？</button>
+                      <button class="prompt-chip" type="button" data-prompt="unknown">还有哪些关键未知？</button>
+                    </div>
+                    <div class="chat-log" id="chat-log" aria-live="polite"></div>
+                    <form class="chat-form" id="chat-form">
+                      <label class="sr-only" for="chat-input">输入追问</label>
+                      <input id="chat-input" type="text" placeholder="输入追问，或使用上方预设问题">
+                      <button class="button" type="submit">发送</button>
+                    </form>
+                  </div>
+                </section>
+              </article>
+            </div>
+          </section>
+
+          <aside class="source-inspector" id="source-inspector" aria-label="来源与证据检查器">
+            <div class="inspector-head"><strong>SOURCE INSPECTOR</strong><button class="inspector-close" id="desktop-close-inspector" type="button" aria-label="收起来源检查器">收起</button></div>
+            <div class="source-filters" role="group" aria-label="来源筛选">
+              <button class="filter" type="button" data-filter="all" aria-pressed="true">全部</button>
+              <button class="filter" type="button" data-filter="self" aria-pressed="false">本人</button>
+              <button class="filter" type="button" data-filter="work" aria-pressed="false">作品</button>
+              <button class="filter" type="button" data-filter="third" aria-pressed="false">第三方</button>
+              <button class="filter" type="button" data-filter="unavailable" aria-pressed="false">异常</button>
+            </div>
+            <div class="source-list" role="listbox" aria-label="合成来源">
+              <button class="source-row" type="button" role="option" data-source="S1" data-type="self" data-status="active" aria-selected="false"><span class="source-code">S1</span><span><strong>本人自述</strong><span>个人主页 · 2025-02-18</span></span></button>
+              <button class="source-row" type="button" role="option" data-source="S2" data-type="work" data-status="active" aria-selected="true"><span class="source-code">S2</span><span><strong>实际作品</strong><span>Lantern 发布记录 · 2024-11-06</span></span></button>
+              <button class="source-row" type="button" role="option" data-source="S3" data-type="third" data-status="active" aria-selected="false"><span class="source-code">S3</span><span><strong>第三方观察</strong><span>North Window 访谈 · 2025-01-12</span></span></button>
+              <button class="source-row" type="button" role="option" data-source="S4" data-type="unavailable" data-status="unavailable" aria-selected="false"><span class="source-code">S4</span><span><strong>无法访问</strong><span>旧版项目日志 · 2023-08-30</span></span></button>
+            </div>
+            <div class="source-detail" id="source-detail"></div>
+          </aside>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p><strong>StripSearch</strong><br>Research the person. Trace the evidence.</p>
+      <p>交互演示 · 合成样例<br><a href="https://github.com/cubxxw/StripSearch" target="_blank" rel="noreferrer">查看 GitHub</a></p>
+    </div>
+  </footer>
+
+  <div class="drawer-backdrop" id="drawer-backdrop"></div>
+  <aside class="mobile-drawer" id="mobile-menu" role="dialog" aria-modal="true" aria-labelledby="mobile-menu-title" aria-hidden="true">
+    <div class="od-row" style="justify-content: space-between"><strong id="mobile-menu-title">StripSearch</strong><button class="button" id="close-menu" type="button">关闭</button></div>
+    <nav aria-label="移动导航">
+      <a href="#method">工作方式</a>
+      <a href="#example">研究示例</a>
+      <a href="#workspace">Chat 工作台</a>
+      <a href="https://github.com/cubxxw/StripSearch" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+    <div id="mobile-history-slot" class="hidden" style="margin-top: 28px">
+      <div class="mono">研究历史</div>
+      <button class="history-item" type="button" data-history="lantern"><strong>林舟 / Lantern</strong><small>完整样例 · 4 个来源</small></button>
+      <button class="history-item" type="button" data-history="empty"><strong>未命名研究</strong><small>空白草稿</small></button>
+    </div>
+  </aside>
+
+  <aside class="mobile-drawer mobile-source-drawer" id="mobile-sources" role="dialog" aria-modal="true" aria-labelledby="mobile-source-title" aria-hidden="true">
+    <div class="od-row" style="justify-content: space-between"><strong id="mobile-source-title">来源与证据</strong><button class="button" id="close-mobile-sources" type="button">关闭</button></div>
+    <div class="source-filters" role="group" aria-label="移动来源筛选" style="margin-top: 14px">
+      <button class="filter" type="button" data-filter="all" aria-pressed="true">全部</button>
+      <button class="filter" type="button" data-filter="self" aria-pressed="false">本人</button>
+      <button class="filter" type="button" data-filter="work" aria-pressed="false">作品</button>
+      <button class="filter" type="button" data-filter="third" aria-pressed="false">第三方</button>
+      <button class="filter" type="button" data-filter="unavailable" aria-pressed="false">异常</button>
+    </div>
+    <div class="source-list" id="mobile-source-list" role="listbox" aria-label="移动合成来源"></div>
+    <div class="source-detail" id="mobile-source-detail"></div>
+  </aside>
+
+  <script>
+    (function () {
+      var sources = {
+        S1: { id: "S1", type: "本人自述", typeKey: "self", title: "个人主页 / 关于 Lantern", date: "2025-02-18", location: "合成主页，第 3 段", quote: "可解释性不是展示答案的装饰，而是让读者看见判断经过哪些公开材料。", supports: "支持林舟公开主张判断应能回到材料。", limits: "属于本人陈述，不能独立证明产品效果或长期实践。", status: "active" },
+        S2: { id: "S2", type: "实际作品", typeKey: "work", title: "Lantern 发布记录 / Evidence Threads", date: "2024-11-06", location: "合成发布记录，界面说明", quote: "事实、分析推断和未知状态分别呈现，引用放在它所支持的句子旁。", supports: "支持 Lantern 已实现信息分区与相邻引用。", limits: "只能证明界面实现，不能证明长期使用效果。", status: "active" },
+        S3: { id: "S3", type: "第三方观察", typeKey: "third", title: "North Window 访谈存档", date: "2025-01-12", location: "合成访谈，第 14 段", quote: "评审接近结论时，林舟要求团队把一条相反材料留在页面上。", supports: "支持一次评审中出现主动保留反证的行为。", limits: "单次观察，缺少完整会议上下文，不能外推到全部项目。", status: "active" },
+        S4: { id: "S4", type: "无法访问", typeKey: "unavailable", title: "旧版项目日志", date: "2023-08-30", location: "合成旧链接，当前下线", quote: "页面当前无法访问，没有可验证短引文。", supports: "不提供当前有效支持。", limits: "只能看到 S3 对它的提及，不能把二手提及当作原始来源。", status: "unavailable" }
+      };
+
+      var runTimer = null;
+      var runStep = 0;
+      var lastDrawerTrigger = null;
+      var reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      var sourceDetail = document.getElementById("source-detail");
+      var mobileSourceDetail = document.getElementById("mobile-source-detail");
+      var mobileSourceList = document.getElementById("mobile-source-list");
+      var workspaceShell = document.getElementById("workspace-shell");
+      var identityPanel = document.getElementById("identity-panel");
+      var activityPanel = document.getElementById("activity-panel");
+      var report = document.getElementById("report");
+      var activityState = document.getElementById("activity-state");
+      var deskState = document.getElementById("desk-state");
+      var stopRun = document.getElementById("stop-run");
+      var resumeRun = document.getElementById("resume-run");
+
+      function escapeHtml(value) {
+        return String(value).replace(/[&<>"]/g, function (char) {
+          return { "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" }[char];
+        });
+      }
+
+      function detailMarkup(source) {
+        var action = source.id === "S2" ? '<button class="button danger" type="button" data-toggle-withdraw="S2">' + (source.status === "withdrawn" ? "恢复合成来源" : "模拟来源撤下") + '</button>' : "";
+        return '<span class="mono" style="color: var(--accent)">' + source.id + ' / ' + escapeHtml(source.type) + '</span>' +
+          '<h3>' + escapeHtml(source.title) + '</h3>' +
+          '<div class="source-quote">“' + escapeHtml(source.quote) + '”</div>' +
+          '<dl><div><dt>日期</dt><dd>' + escapeHtml(source.date) + '</dd></div>' +
+          '<div><dt>定位</dt><dd>' + escapeHtml(source.location) + '</dd></div>' +
+          '<div><dt>支持</dt><dd>' + escapeHtml(source.supports) + '</dd></div>' +
+          '<div><dt>限制</dt><dd>' + escapeHtml(source.limits) + '</dd></div>' +
+          '<div><dt>状态</dt><dd>' + (source.status === "active" ? "有效合成来源" : source.status === "withdrawn" ? "已撤下，依赖结论待复核" : "无法访问，未纳入支持") + '</dd></div></dl>' +
+          '<div class="source-actions">' + action + '</div>';
+      }
+
+      function cloneSourcesToMobile() {
+        mobileSourceList.innerHTML = "";
+        document.querySelectorAll("#source-inspector .source-row").forEach(function (row) {
+          var clone = row.cloneNode(true);
+          clone.removeAttribute("aria-selected");
+          mobileSourceList.appendChild(clone);
+        });
+      }
+
+      function bindWithdrawButtons() {
+        document.querySelectorAll("[data-toggle-withdraw]").forEach(function (button) { button.addEventListener("click", toggleWithdrawal); });
+      }
+
+      function renderSource(id) {
+        var source = sources[id];
+        if (!source) return;
+        sourceDetail.innerHTML = detailMarkup(source);
+        mobileSourceDetail.innerHTML = detailMarkup(source);
+        document.querySelectorAll(".source-row").forEach(function (row) {
+          row.setAttribute("aria-selected", row.dataset.source === id ? "true" : "false");
+          if (row.dataset.source === "S2") row.dataset.status = sources.S2.status;
+        });
+        document.querySelectorAll(".track-node").forEach(function (node) { node.setAttribute("aria-pressed", node.dataset.source === id ? "true" : "false"); });
+        var preview = document.getElementById("mechanism-preview");
+        preview.innerHTML = '<span class="mono">' + source.id + ' / ' + escapeHtml(source.type) + '</span><strong>' + escapeHtml(source.title) + '</strong><p>“' + escapeHtml(source.quote) + '”</p><span>' + escapeHtml(source.limits) + '</span>';
+        bindWithdrawButtons();
+      }
+
+      function toggleWithdrawal() {
+        sources.S2.status = sources.S2.status === "withdrawn" ? "active" : "withdrawn";
+        var finding = document.getElementById("finding-s2");
+        var findingStatus = document.getElementById("finding-s2-status");
+        var claim = document.getElementById("mechanism-claim");
+        var claimState = document.getElementById("mechanism-state");
+        if (sources.S2.status === "withdrawn") {
+          finding.dataset.validity = "review";
+          findingStatus.textContent = "REVIEW / S2 已撤下";
+          claim.dataset.validity = "review";
+          claimState.textContent = "REVIEW / 关键作品来源撤下";
+        } else {
+          finding.dataset.validity = "supported";
+          findingStatus.textContent = "VALID / 来源有效";
+          claim.dataset.validity = "supported";
+          claimState.textContent = "SUPPORTED / 关键来源有效";
+        }
+        renderSource("S2");
+      }
+
+      function openDrawer(drawer, trigger) {
+        closeDrawers();
+        lastDrawerTrigger = trigger;
+        document.body.classList.add("drawer-open");
+        document.getElementById("drawer-backdrop").classList.add("open");
+        drawer.classList.add("open");
+        drawer.setAttribute("aria-hidden", "false");
+        var first = drawer.querySelector("button, a");
+        if (first) first.focus();
+      }
+
+      function closeDrawers() {
+        document.body.classList.remove("drawer-open");
+        document.getElementById("drawer-backdrop").classList.remove("open");
+        document.querySelectorAll(".mobile-drawer.open").forEach(function (drawer) { drawer.classList.remove("open"); drawer.setAttribute("aria-hidden", "true"); });
+        if (lastDrawerTrigger) { var trigger = lastDrawerTrigger; lastDrawerTrigger = null; trigger.focus(); }
+      }
+
+      function openSource(id, trigger) {
+        renderSource(id);
+        if (window.innerWidth <= 1220) openDrawer(document.getElementById("mobile-sources"), trigger);
+        else if (workspaceShell.classList.contains("inspector-collapsed")) toggleInspector();
+      }
+
+      function applyFilter(filter) {
+        document.querySelectorAll(".filter").forEach(function (button) { button.setAttribute("aria-pressed", button.dataset.filter === filter ? "true" : "false"); });
+        document.querySelectorAll(".source-row").forEach(function (row) {
+          var abnormal = row.dataset.status === "withdrawn" || row.dataset.status === "unavailable";
+          row.hidden = !(filter === "all" || row.dataset.type === filter || (filter === "unavailable" && abnormal));
+        });
+      }
+
+      function resetActivity() {
+        runStep = 0;
+        document.querySelectorAll(".activity-item").forEach(function (item) { item.dataset.status = "pending"; item.querySelector(".activity-tag").textContent = "待处理"; item.open = false; });
+      }
+
+      function setRunControls(running, paused) {
+        stopRun.disabled = !running || paused;
+        resumeRun.classList.toggle("hidden", !paused);
+      }
+
+      function startSequence() {
+        clearInterval(runTimer);
+        setRunControls(true, false);
+        activityState.textContent = "RUNNING / 脚本演示";
+        deskState.textContent = "RUNNING / 显示可观察步骤";
+        var items = Array.prototype.slice.call(document.querySelectorAll(".activity-item"));
+        var delay = reducedMotion ? 80 : 650;
+        function advance() {
+          if (runStep > 0) {
+            var previous = items[runStep - 1];
+            previous.dataset.status = runStep - 1 === 3 ? "error" : "done";
+            previous.querySelector(".activity-tag").textContent = runStep - 1 === 3 ? "无法访问" : "完成";
+          }
+          if (runStep >= items.length) {
+            clearInterval(runTimer);
+            runTimer = null;
+            activityState.textContent = "COMPLETE / 脚本完成";
+            deskState.textContent = "COMPLETE / 报告可检查";
+            setRunControls(false, false);
+            report.classList.remove("hidden");
+            report.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
+            return;
+          }
+          var current = items[runStep];
+          current.dataset.status = "active";
+          current.querySelector(".activity-tag").textContent = "正在展示";
+          current.open = true;
+          runStep += 1;
+        }
+        advance();
+        runTimer = setInterval(advance, delay);
+      }
+
+      function beginDemo(question) {
+        clearInterval(runTimer);
+        resetActivity();
+        identityPanel.classList.remove("hidden");
+        activityPanel.classList.add("hidden");
+        report.classList.add("hidden");
+        deskState.textContent = "IDENTITY / 等待候选确认";
+        setRunControls(false, false);
+        if (question) document.getElementById("research-question").value = question;
+        document.getElementById("workspace").scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
+        setTimeout(function () { document.querySelector('input[name="candidate"]:checked').focus(); }, reducedMotion ? 0 : 320);
+      }
+
+      function showCompletedReport() {
+        clearInterval(runTimer);
+        identityPanel.classList.add("hidden");
+        activityPanel.classList.remove("hidden");
+        document.querySelectorAll(".activity-item").forEach(function (item, index) { item.dataset.status = index === 3 ? "error" : "done"; item.querySelector(".activity-tag").textContent = index === 3 ? "无法访问" : "完成"; });
+        activityState.textContent = "COMPLETE / 脚本完成";
+        report.classList.remove("hidden");
+        deskState.textContent = "COMPLETE / 报告可检查";
+        setRunControls(false, false);
+      }
+
+      function appendMessage(role, label, text) {
+        var log = document.getElementById("chat-log");
+        var message = document.createElement("div");
+        message.className = "message " + role;
+        var small = document.createElement("small"); small.textContent = label;
+        var body = document.createElement("div"); body.textContent = text;
+        message.appendChild(small); message.appendChild(body); log.appendChild(message);
+        message.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "nearest" });
+      }
+
+      function scriptedAnswer(key, question) {
+        appendMessage("user", "你的追问", question);
+        var answers = {
+          self: "只依赖本人自述的是林舟对“可解释性”的公开定义。关于 Lantern 已实现信息分区的事实还需要 S2 这项实际作品来源。",
+          withdraw: "如果 S2 撤下，关于 Lantern 已实现事实、推断与未知分区的结论会变为待复核。本人自述仍然有效，但不能替代作品证据。",
+          unknown: "关键未知包括：这种界面规则是否长期执行、用户是否更容易核查结论，以及 S4 旧版日志是否包含相反设计记录。"
+        };
+        appendMessage("assistant", "StripSearch · 脚本答案", answers[key]);
+      }
+
+      function downloadMarkdown() {
+        var validity = sources.S2.status === "withdrawn" ? "待复核，S2 已撤下" : "来源有效";
+        var content = [
+          "# StripSearch 合成研究报告", "", "> 交互演示 · 合成样例。没有真实检索、模型推理或后台服务。", "", "## 研究问题", "",
+          "林舟在 Lantern 项目中如何把可解释性从理念变成具体设计决策？", "", "## 已支持事实", "",
+          "- Lantern 的公开界面区分事实、分析推断与未知。[S2]", "- 林舟公开主张判断应能回到材料。[S1]", "", "## 分析推断", "",
+          "林舟倾向于把可解释性当作界面结构约束，而不是报告末尾的来源附录。[S1][S2]", "", "## 反证与未知", "",
+          "S3 只记录一次评审。S4 当前无法访问。", "", "## 来源状态", "", "- S1 本人自述：有效", "- S2 实际作品：" + validity,
+          "- S3 第三方观察：有效但存在单次观察限制", "- S4 旧版项目日志：无法访问，未纳入支持"
+        ].join("\n");
+        var blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
+        var url = URL.createObjectURL(blob);
+        var link = document.createElement("a"); link.href = url; link.download = "stripsearch-linzhou-lantern-synthetic.md";
+        document.body.appendChild(link); link.click(); link.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+        deskState.textContent = "LOCAL / Markdown 已生成";
+      }
+
+      function bindCitationButtons(root) {
+        (root || document).querySelectorAll(".citation").forEach(function (button) {
+          if (button.dataset.bound) return;
+          button.dataset.bound = "true";
+          button.addEventListener("click", function () { openSource(button.dataset.source, button); });
+        });
+      }
+
+      function bindSourceRows(root) {
+        root.querySelectorAll(".source-row").forEach(function (row) { row.addEventListener("click", function () { renderSource(row.dataset.source); }); });
+      }
+
+      document.querySelectorAll("[data-question]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          document.getElementById("research-question").value = button.dataset.question;
+          document.getElementById("question-error").textContent = "";
+          document.getElementById("research-question").focus();
+        });
+      });
+
+      document.querySelectorAll(".mode").forEach(function (button) {
+        button.addEventListener("click", function () {
+          document.querySelectorAll(".mode").forEach(function (item) { item.setAttribute("aria-pressed", "false"); });
+          button.setAttribute("aria-pressed", "true");
+          document.getElementById("form-status").textContent = "已选择“" + button.textContent + "”。仍为本地脚本演示。";
+        });
+      });
+
+      document.getElementById("research-form").addEventListener("submit", function (event) {
+        event.preventDefault();
+        var urlInput = document.getElementById("profile-url");
+        var questionInput = document.getElementById("research-question");
+        var urlError = document.getElementById("profile-error");
+        var questionError = document.getElementById("question-error");
+        urlError.textContent = ""; questionError.textContent = "";
+        var firstInvalid = null;
+        if (urlInput.value.trim() && !/^https?:\/\//i.test(urlInput.value.trim())) { urlError.textContent = "请输入以 http:// 或 https:// 开头的公开主页。"; firstInvalid = urlInput; }
+        if (!questionInput.value.trim()) { questionError.textContent = "请写下一个具体研究问题，再预览流程。"; if (!firstInvalid) firstInvalid = questionInput; }
+        if (firstInvalid) { firstInvalid.focus(); document.getElementById("form-status").textContent = "请修正标出的字段。"; return; }
+        document.getElementById("form-status").textContent = "输入有效。进入身份候选确认。";
+        beginDemo(questionInput.value.trim());
+      });
+
+      document.getElementById("open-example").addEventListener("click", function () {
+        document.getElementById("profile-url").value = "https://linzhou.example";
+        document.getElementById("research-question").value = "林舟在 Lantern 项目中如何把可解释性从理念变成具体设计决策？";
+        beginDemo(document.getElementById("research-question").value);
+      });
+
+      document.getElementById("confirm-identity").addEventListener("click", function () {
+        var chosen = document.querySelector('input[name="candidate"]:checked').value;
+        if (chosen !== "lantern") {
+          document.getElementById("identity-note").textContent = "该候选与 Lantern 无公开关联。请选择 Lantern 关联候选继续合成演示。";
+          document.getElementById("identity-note").style.color = "var(--danger)";
+          return;
+        }
+        identityPanel.classList.add("hidden");
+        activityPanel.classList.remove("hidden");
+        document.getElementById("identity-note").style.color = "var(--accent)";
+        startSequence();
+      });
+
+      stopRun.addEventListener("click", function () {
+        if (!runTimer) return;
+        clearInterval(runTimer); runTimer = null;
+        activityState.textContent = "PAUSED / 脚本暂停";
+        deskState.textContent = "PAUSED / 可继续剩余步骤";
+        setRunControls(true, true);
+      });
+      resumeRun.addEventListener("click", startSequence);
+
+      document.getElementById("retry-source").addEventListener("click", function () {
+        document.getElementById("retry-status").textContent = "重试完成：S4 仍无法访问，继续排除在有效支持之外。";
+        this.disabled = true;
+      });
+
+      document.querySelectorAll(".track-node").forEach(function (node) { node.addEventListener("click", function () { renderSource(node.dataset.source); }); });
+      document.querySelectorAll(".filter").forEach(function (button) { button.addEventListener("click", function () { applyFilter(button.dataset.filter); }); });
+      document.querySelectorAll(".prompt-chip").forEach(function (button) { button.addEventListener("click", function () { scriptedAnswer(button.dataset.prompt, button.textContent); }); });
+
+      document.getElementById("chat-form").addEventListener("submit", function (event) {
+        event.preventDefault();
+        var input = document.getElementById("chat-input");
+        var value = input.value.trim();
+        if (!value) { input.focus(); return; }
+        var normalized = value.toLowerCase();
+        if (value.indexOf("本人自述") >= 0) scriptedAnswer("self", value);
+        else if (normalized.indexOf("s2") >= 0 || value.indexOf("撤下") >= 0) scriptedAnswer("withdraw", value);
+        else if (value.indexOf("未知") >= 0) scriptedAnswer("unknown", value);
+        else { appendMessage("user", "你的追问", value); appendMessage("assistant", "StripSearch · 原型边界", "当前原型只支持三个预设追问，不会假装理解任意问题。请选择上方问题继续。 "); }
+        input.value = "";
+      });
+
+      document.getElementById("new-research").addEventListener("click", function () {
+        clearInterval(runTimer);
+        document.getElementById("profile-url").value = "";
+        document.getElementById("research-question").value = "";
+        document.getElementById("chat-log").innerHTML = "";
+        document.getElementById("form-status").textContent = "新研究已清空。不会连接网络或运行真实模型。";
+        identityPanel.classList.add("hidden"); activityPanel.classList.add("hidden"); report.classList.add("hidden");
+        deskState.textContent = "EMPTY / 等待输入"; setRunControls(false, false);
+        document.getElementById("top").scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
+        document.getElementById("research-question").focus();
+      });
+
+      document.querySelectorAll("[data-history]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          if (button.dataset.history === "lantern") { showCompletedReport(); closeDrawers(); document.getElementById("workspace").scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" }); }
+          else { document.getElementById("new-research").click(); closeDrawers(); }
+        });
+      });
+
+      document.getElementById("download-md").addEventListener("click", downloadMarkdown);
+
+      function toggleInspector() {
+        var collapsed = workspaceShell.classList.toggle("inspector-collapsed");
+        document.getElementById("toggle-inspector").setAttribute("aria-pressed", collapsed ? "true" : "false");
+        document.getElementById("toggle-inspector").textContent = collapsed ? "展开来源" : "收起来源";
+      }
+      document.getElementById("toggle-inspector").addEventListener("click", toggleInspector);
+      document.getElementById("desktop-close-inspector").addEventListener("click", toggleInspector);
+
+      document.getElementById("open-menu").addEventListener("click", function () { document.getElementById("mobile-history-slot").classList.add("hidden"); openDrawer(document.getElementById("mobile-menu"), this); });
+      document.getElementById("open-mobile-history").addEventListener("click", function () { document.getElementById("mobile-history-slot").classList.remove("hidden"); openDrawer(document.getElementById("mobile-menu"), this); });
+      document.getElementById("open-mobile-sources").addEventListener("click", function () { openDrawer(document.getElementById("mobile-sources"), this); });
+      document.getElementById("close-menu").addEventListener("click", closeDrawers);
+      document.getElementById("close-mobile-sources").addEventListener("click", closeDrawers);
+      document.getElementById("drawer-backdrop").addEventListener("click", closeDrawers);
+      document.querySelectorAll("#mobile-menu nav a").forEach(function (link) { link.addEventListener("click", closeDrawers); });
+      document.addEventListener("keydown", function (event) { if (event.key === "Escape") closeDrawers(); });
+
+      cloneSourcesToMobile();
+      bindSourceRows(document.getElementById("source-inspector"));
+      bindSourceRows(document.getElementById("mobile-sources"));
+      bindCitationButtons(document);
+      renderSource("S2");
+      showCompletedReport();
+    })();
+  </script>
+</body>
+</html>
