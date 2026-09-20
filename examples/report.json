@@ -1,0 +1,169 @@
+{
+  "schema_version": "stripsearch/v0.1-draft",
+  "run_id": "run-demo-001",
+  "state": "completed",
+  "errors": [],
+  "data": {
+    "synthetic": true,
+    "revision": 1,
+    "supersedes": null,
+    "as_of": "2026-09-20",
+    "generated_by": "authored_example_not_agent_run",
+    "people_index": [
+      {
+        "person_id": "person-demo-a",
+        "display_name": "林舟（合成）",
+        "identity_status": "resolved",
+        "report_anchor": "person-demo-a",
+        "profile_links": [
+          {
+            "url": "https://example.org/people/lin-zhou-a",
+            "verification_status": "verified_in_fixture",
+            "evidence_ids": [
+              "ev-profile"
+            ]
+          }
+        ],
+        "identity_evidence_ids": [
+          "ev-profile"
+        ]
+      }
+    ],
+    "identity_links": [
+      {
+        "source_id": "src-a",
+        "person_id": "person-demo-a",
+        "state": "linked",
+        "basis_evidence_ids": [
+          "ev-profile"
+        ],
+        "revision": 1
+      },
+      {
+        "source_id": "src-news",
+        "person_id": "person-demo-a",
+        "state": "linked",
+        "basis_evidence_ids": [
+          "ev-release-identity"
+        ],
+        "revision": 1
+      }
+    ],
+    "sources": [
+      {
+        "source_id": "src-a",
+        "canonical_url": "https://example.org/people/lin-zhou-a",
+        "title": "林舟公开主页（合成）",
+        "origin_group_id": "origin-a",
+        "published_at": "2026-09-01",
+        "retrieved_at": "2026-09-20T00:00:00Z",
+        "fetch_status": "fixture",
+        "snapshot_hash": null,
+        "export_policy": "public_synthetic"
+      },
+      {
+        "source_id": "src-news",
+        "canonical_url": "https://example.org/news/lantern-v2",
+        "title": "Lantern 发布原稿（合成）",
+        "origin_group_id": "origin-release",
+        "published_at": "2026-08-10",
+        "retrieved_at": "2026-09-20T00:00:00Z",
+        "fetch_status": "fixture",
+        "snapshot_hash": null,
+        "export_policy": "public_synthetic"
+      }
+    ],
+    "evidence": [
+      {
+        "evidence_id": "ev-profile",
+        "source_id": "src-a",
+        "locator": "body:sentence:1",
+        "excerpt": "林舟，Lantern 软件作者。"
+      },
+      {
+        "evidence_id": "ev-release",
+        "source_id": "src-news",
+        "locator": "body:sentence:1",
+        "excerpt": "软件作者林舟发布 Lantern 2.0。"
+      },
+      {
+        "evidence_id": "ev-release-identity",
+        "source_id": "src-news",
+        "locator": "body:last-sentence",
+        "excerpt": "本文明确引用软件作者主页 https://example.org/people/lin-zhou-a 。"
+      }
+    ],
+    "claims": [
+      {
+        "claim_id": "claim-author",
+        "person_id": "person-demo-a",
+        "statement": "该主页将林舟列为 Lantern 软件作者。",
+        "kind": "attributed_statement",
+        "status": "supported",
+        "support_evidence_ids": [
+          "ev-profile"
+        ],
+        "refute_evidence_ids": [],
+        "valid_from": null,
+        "valid_to": null,
+        "as_of": "2026-09-20"
+      },
+      {
+        "claim_id": "claim-release",
+        "person_id": "person-demo-a",
+        "statement": "2026-08-10 的发布公告记录林舟发布 Lantern 2.0。",
+        "kind": "attributed_statement",
+        "status": "supported",
+        "support_evidence_ids": [
+          "ev-release"
+        ],
+        "refute_evidence_ids": [],
+        "valid_from": "2026-08-10",
+        "valid_to": null,
+        "as_of": "2026-09-20"
+      }
+    ],
+    "events": [
+      {
+        "event_id": "event-release",
+        "person_id": "person-demo-a",
+        "occurred_at": null,
+        "recorded_at": "2026-08-10",
+        "action_claim_ids": [
+          "claim-release"
+        ],
+        "outcome_claim_ids": [],
+        "context": "发布公告；实际发生时间未单独确认。",
+        "unknowns": [
+          "实际使用规模与持续维护情况未知。"
+        ]
+      }
+    ],
+    "behavior_hypotheses": [],
+    "coverage": [
+      {
+        "question": "有哪些有来源的作品发布记录？",
+        "status": "answered",
+        "claim_ids": [
+          "claim-release"
+        ]
+      },
+      {
+        "question": "能否判断长期维护能力？",
+        "status": "unknown",
+        "reason": "只有发布公告，没有后续维护记录。"
+      }
+    ],
+    "unknowns": [
+      "实际使用规模与持续维护情况未知。",
+      "单次公告不足以判断长期行为模式。"
+    ],
+    "usage": {
+      "measurement_status": "not_run",
+      "requests": null,
+      "cost_usd": null,
+      "elapsed_seconds": null
+    },
+    "stop_reason": "synthetic_scope_complete"
+  }
+}

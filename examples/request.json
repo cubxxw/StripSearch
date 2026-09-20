@@ -1,0 +1,51 @@
+{
+  "schema_version": "stripsearch/v0.1-draft",
+  "idempotency_key": "synthetic-demo-001",
+  "subject": {
+    "name": "林舟（合成）",
+    "seed_urls": [
+      "https://example.org/people/lin-zhou-a"
+    ],
+    "context": "公开软件作者"
+  },
+  "questions": [
+    "有哪些有来源的作品发布记录？",
+    "能否判断长期维护能力？"
+  ],
+  "as_of": "2026-09-20",
+  "languages": [
+    "zh",
+    "en"
+  ],
+  "sources": {
+    "allowed_domains": [
+      "example.org"
+    ],
+    "excluded_domains": [],
+    "platforms": [],
+    "local_collection_ids": []
+  },
+  "output": {
+    "format": "markdown",
+    "initial_view": "timeline",
+    "sections": [
+      "identity",
+      "timeline",
+      "claims",
+      "unknowns"
+    ],
+    "detail": "standard",
+    "audience": "public"
+  },
+  "budget": {
+    "max_searches": 10,
+    "max_pages": 20,
+    "max_requests": 30,
+    "max_seconds": 300,
+    "max_cost_usd": 2
+  },
+  "execution": {
+    "mode": "fixture",
+    "network_access": false
+  }
+}

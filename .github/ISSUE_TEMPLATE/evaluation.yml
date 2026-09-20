@@ -1,0 +1,24 @@
+name: Evaluation case
+description: A synthetic or licensed failure case
+title: "[Eval] "
+body:
+  - type: textarea
+    id: case
+    attributes:
+      label: 任务、来源与期望行为
+      description: 使用合成材料或明确可再分发的公开职业材料；不要上传私人档案。
+    validations:
+      required: true
+  - type: textarea
+    id: failure
+    attributes:
+      label: 错误、反例与验收
+      description: 区分待执行的规格与真实运行结果，附可复现配置。
+    validations:
+      required: true
+  - type: input
+    id: license
+    attributes:
+      label: 素材出处 / 许可
+    validations:
+      required: true

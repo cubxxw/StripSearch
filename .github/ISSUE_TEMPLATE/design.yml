@@ -1,0 +1,24 @@
+name: Design proposal
+description: A concrete design question or improvement
+title: "[Design] "
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 问题与使用场景
+      description: 当前设计在什么具体情境下不足？请链接相关文档。
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 方案、替代与代价
+    validations:
+      required: true
+  - type: textarea
+    id: validation
+    attributes:
+      label: 如何验证
+      description: 写出能改变决定的证据与失败条件；未运行的内容请明确说明。
+    validations:
+      required: true
