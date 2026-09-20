@@ -63,9 +63,52 @@
     "formal accessibility audit"
   ],
   "sha256": {
-    "index.html": "5c9abe15dc648ec7dcb7f5fba6045c098cf370a55f81e5c26ccbd682ab2977db",
+    "index.html": "4af9365cfa8ef658afc3c7213f0c4a99cfaaaedd8b933e3ec96e1a1606dabfaa",
     "concept-a.html": "e1bd86e476493c08ef714675092071c22c6f8a426e7de07fcaff0aa36a88100a",
     "concept-b.html": "634b79530bf8e63f16a042d88ecb40c85f5f352f883a09683fc189b1179c57b9",
-    "qa/prototype.test.cjs": "7b9d7f1e2824f46ef060eaec32da82398a4b5b575963f368d43d2815cfe7eeaf"
+    "qa/prototype.test.cjs": "7b9d7f1e2824f46ef060eaec32da82398a4b5b575963f368d43d2815cfe7eeaf",
+    "screenshots/home-light-desktop.png": "e159a6d1da0ec61f451ceb2a07fffbbd4de14ca3b5c2e9f000c673c6b3a11515"
+  },
+  "system_theme_validation": {
+    "date": "2026-09-20",
+    "implementation": "CSS media query; no stored override; light fallback",
+    "browser": "Chromium CDP prefers-color-scheme emulation through Codex browser",
+    "live_switching": [
+      "light",
+      "dark",
+      "light"
+    ],
+    "input_preserved": true,
+    "withdrawal_state_preserved": true,
+    "light_desktop": {
+      "width": 1280,
+      "height": 720,
+      "scrollWidth": 1280,
+      "views": [
+        "home",
+        "chat"
+      ]
+    },
+    "mobile_drawer": {
+      "width": 375,
+      "height": 812,
+      "scrollWidth": 375,
+      "themes": [
+        "light",
+        "dark"
+      ]
+    },
+    "emulation_and_viewport_reset": true,
+    "console_errors_observed": 0,
+    "min_checked_text_contrast": {
+      "light": 4.6,
+      "dark": 4.63
+    },
+    "regression_dom_tests": {
+      "passed": 21,
+      "failed": 0
+    },
+    "static_design_check": "passed",
+    "contrast_scope": "Token combinations only; not a complete accessibility audit"
   }
 }

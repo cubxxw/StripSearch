@@ -1,6 +1,6 @@
 # StripSearch Evidence Terminal 原型
 
-`index.html` 是 StripSearch 的**最终本地交互设计原型**：以 Open Design 方向 A（Evidence Terminal）为起点收敛，保留黑 / 绿细网格品牌。它演示输入校验、同名候选确认、可观察研究活动、结构化回答、来源撤回与 Markdown 导出。
+`index.html` 是 StripSearch 的**最终本地交互设计原型**：以 Open Design 方向 A（Evidence Terminal）为起点收敛，保留细网格与绿色品牌，支持纸白 / 深绿亮色和黑 / 荧光绿深色，默认随系统色调实时切换。它演示输入校验、同名候选确认、可观察研究活动、结构化回答、来源撤回与 Markdown 导出。
 
 这是一个**本地合成演示**，尚未接入真实研究引擎：
 

@@ -11,19 +11,24 @@
 
 Evidence Terminal：问题进入，公开记录被连接，结论保持可检查。
 
-| 令牌 | 值 | 用途 |
-| --- | --- | --- |
-| `--bg` | `#0a0a0a` | 页面底色、抽屉与报告基底 |
-| `--surface` / `--surface-2` / `--surface-3` | `#111316` / `#171a1d` / `#1d2125` | 面板、表单、消息、引用块 |
-| `--fg` / `--fg-2` | `#edf0ed` / `#c7ccc8` | 标题正文 / 次级正文 |
-| `--muted` / `--faint` | `#9ba69f` / `#858e87` | 辅助文字 / 编号与轨道标签 |
-| `--border` / `--border-strong` | `#282d29` / `#404741` | 细线分隔 / 结构边界 |
-| `--accent` | `#00ff41` | 主按钮、活动节点、焦点、引用 |
-| `--accent-dark` / `--accent-on` | `#003b12` / `#061108` | 选中态底色 / 荧光绿上的文字 |
-| `--warning` | `#ffb800` | 合成样例徽标圆点 |
-| `--danger` / `--danger-dark` | `#ff6b6b` / `#351819` | 撤下、错误、待复核 |
-| `--success` | `#8fe6a5` | 有效状态文字 |
-| `--radius` | `5px` | 功能性小圆角，不做胶囊 |
+默认跟随系统的亮 / 深色偏好，系统切换时自动更新，无需刷新或保存主题覆盖。无明确偏好时使用亮色。通过 CSS `prefers-color-scheme` 与 `color-scheme` 同时控制页面和原生表单控件；不依赖 JavaScript 初始化，首屏即使用相应主题。
+
+| 令牌 | 亮色 | 深色 | 用途 |
+| --- | --- | --- | --- |
+| `--bg` | `#f7f9f6` | `#0a0a0a` | 页面、抽屉与报告基底 |
+| `--surface` / `--surface-2` / `--surface-3` | `#ffffff` / `#eef3ee` / `#e4ebe5` | `#111316` / `#171a1d` / `#1d2125` | 面板、表单、消息、引用块 |
+| `--fg` / `--fg-2` | `#12231a` / `#35483d` | `#edf0ed` / `#c7ccc8` | 标题正文 / 次级正文 |
+| `--muted` / `--faint` | `#526459` / `#5b6c61` | `#9ba69f` / `#858e87` | 辅助文字 / 编号 |
+| `--border` / `--border-strong` | `#d7e0d8` / `#7b8c80` | `#282d29` / `#404741` | 分隔 / 结构边界 |
+| `--accent` / `--accent-hover` | `#006b31` / `#005527` | `#00ff41` / `#5aff7d` | 主按钮、焦点、引用 / 悬停 |
+| `--accent-dark` / `--accent-on` | `#e1f0e5` / `#ffffff` | `#003b12` / `#061108` | 选中态底色 / 主按钮文字 |
+| `--warning` | `#946200` | `#ffb800` | 合成样例徽标圆点 |
+| `--danger` / `--danger-dark` | `#aa293a` / `#fff0f0` | `#ff6b6b` / `#351819` | 撤下、错误、待复核 |
+| `--success` | `#23693b` | `#8fe6a5` | 有效状态文字 |
+
+两套主题共用布局与证据状态。导航透明底色、网格、阴影、占位文字、焦点光晕、抽屉遮罩与危险按钮边框使用独立主题令牌，避免亮色页面残留深色组件。`--radius` 两种主题均为 `5px`。
+
+参考：[MDN prefers-color-scheme](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/At-rules/@media/prefers-color-scheme) · [MDN color-scheme](https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Properties/color-scheme)。
 
 排版与节奏：
 
