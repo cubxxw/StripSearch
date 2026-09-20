@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { installDom } from './dom-env.js';
+import { ApiError } from '../client/api.js';
 
 const env = installDom();
 const { createAuthController } = await import('../client/auth.js');
@@ -143,10 +144,11 @@ test('a failed auth response shows an error and re-enables the form', async () =
   assert.equal(calls.length, 1);
   assert.equal(els.submit.disabled, true);
   // A rejected request surfaces an error and re-enables the form.
-  pending[0]?.reject(new Error('boom'));
+  pending[0]?.reject(new ApiError(401, 'INVALID_EMAIL_OR_PASSWORD', 'Invalid email or password'));
   await tick();
   assert.equal(els.submit.disabled, false);
   assert.equal(els.email.getAttribute('aria-invalid'), 'true');
+  assert.equal(env.document.getElementById('auth-email-error')?.textContent, '邮箱或密码不正确，请重试。');
 });
 
 test('client-side validation blocks an invalid email before any request', async () => {

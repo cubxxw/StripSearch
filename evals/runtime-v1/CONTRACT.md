@@ -35,7 +35,8 @@
 - `replay` 严格按顺序匹配 method + URL；可选 `body_includes: string[]` 要求实际发送的请求 JSON 字符串包含这些片段（校验问题与种子均被发送）。响应 `status` + `json`；可选 `redirected: true`、`delay_ms`（遵守 abort），`raw_text` 替代 json 测试非法 JSON。仅固定 GitHub / Exa endpoint 的内存响应，不访问真实网络。
 - `expect.state`: completed / partial / failed / needs_input；失败使用 `error_code`；scope 使用 `disallowed`。expect 其余字段可省略；`requests` 始终必填。`source_count`、`identity_status`、URL、文本、claim_kinds 只作用于实际输出。缺失输出不能获得 vacuous pass。
 - `claim_kinds` 必须至少找到一个包含指定文字的 claim，并验证所有匹配项的 kind，不能找到一个正确项就忽略另一个升级为事实的项。
-- `config` 可选 `{ "exa_configured": false, "timeout_ms": 30, "max_bytes": 2048 }`；均有严格界限。不读取当前环境中的供应商密钥。
+- `config` 可选 `{ "exa_configured": false, "timeout_ms": 30, "max_bytes": 2048 }`；均有严格界限。Exa 默认使用离线虚拟 key；显式 false 才测试未配置分支。不读取当前环境中的供应商密钥。
+- v1 只接受 `dataset_version: runtime-v1` 与 `review_status: unreviewed`。人工评审需要后续带评审来源的格式，不能改一个状态就称为 gold。case_id 使用字母、数字、点、下划线、连字符且以字母或数字开头；tags 不能重复。
 - `check_revocation` 可选；使用生产 Store + canonical renderer 验证排除首条已被引用来源、恢复、导出修订与依赖失效；每次变更前后都要保留检查证据。报告明确这是存储 / 呈现检查，不是浏览器行为。
 
 ## 执行与评分

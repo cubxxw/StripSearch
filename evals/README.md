@@ -1,4 +1,25 @@
-# Dataset card · v0.1-draft
+# Evaluation 数据集入口
+
+| 数据 | 数量 | 当前用途 |
+|---|---:|---|
+| [Runtime v1](runtime-v1/README.md) | 40 案例 / 20 对照组 | 生产适配器冻结回放、存储与导出规则 |
+| [Behavior v1](behavior-v1/README.md) | 8 案例 / 18 来源 | 待评审研究判断 rubric；尚未运行 |
+| [FRAMES 子集](external/frames-v1/README.md) | 24 问题 | 固定版本外部 discovery；尚未运行 |
+| 原有设计种子（本页以下） | 12 案例 / 12 来源 | 设计规格；尚未人工裁决 |
+
+外部选型见 [目录](external/README.md)。默认执行 `npm --prefix apps/web run eval` 只跑 Runtime v1；原有种子、Behavior 与 FRAMES 不计入通过率。
+
+```bash
+python3 scripts/check_eval_datasets.py
+npm --prefix apps/web run eval
+npm --prefix apps/web run eval -- --split regression --output _private/evals/regression
+```
+
+默认报告写入 `_private/evals/latest/report.md` 与 `report.json`。逐案保留期望、实际值、失败原因，汇总按 provider、split、tag 分组；源码 commit、dirty 状态和数据 SHA256 随报告保存。结构断言失败退出 1，非法数据或参数退出 2。来源正文、候选结果与运行数据库不进公开仓库。
+
+`.github/workflows/web-evals.yml` 已配置推送 / PR 时执行 Web 测试、类型检查、构建、数据完整性与离线回放。只有 GitHub 对具体提交运行后，才有远端 CI 结果；本地通过不表示远端已经通过。
+
+## 原有 Dataset card · v0.1-draft
 
 12 个原创合成任务、12 份合成来源；中文；一个共享实体族；全部为 `synthetic / discovery / unreviewed`。来源为本项目设计阶段编写的虚构材料，不对应真实个人。按仓库 Apache-2.0 许可提供。
 

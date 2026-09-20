@@ -12,6 +12,16 @@ export interface AuthController {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+function authErrorMessage(error: unknown): string {
+  if (error instanceof TypeError) return '连接失败，请检查网络后重试。';
+  if (!(error instanceof ApiError)) return '暂时无法登录，请重试。';
+  if (error.code === 'INVALID_EMAIL_OR_PASSWORD' || error.status === 401) return '邮箱或密码不正确，请重试。';
+  if (error.code === 'USER_ALREADY_EXISTS' || error.code === 'USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL') return '这个邮箱已注册，请直接登录。';
+  if (error.status === 429) return '尝试次数较多，请稍后重试。';
+  if (error.status >= 500) return '服务暂时不可用，请稍后重试。';
+  return '未能完成登录或注册，请检查填写内容后重试。';
+}
+
 export function createAuthController(api: ApiClient): AuthController {
   const dialog = byId<HTMLDialogElement>('auth-dialog');
   const form = byId<HTMLFormElement>('auth-form');
@@ -129,7 +139,7 @@ export function createAuthController(api: ApiClient): AuthController {
       })
       .catch((error: unknown) => {
         if (epoch !== openEpoch || !dialog.open) return;
-        const message = error instanceof ApiError ? error.message : '认证失败，请稍后再试。';
+        const message = authErrorMessage(error);
         setText(status, '');
         setText(emailError, message);
         emailInput.setAttribute('aria-invalid', 'true');
