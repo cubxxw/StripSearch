@@ -9,5 +9,29 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
       - name: Check design artifacts (offline)
         run: python3 scripts/check_design.py
+      - name: Check evidence-gate probe (offline synthetic inputs)
+        run: python3 -m unittest discover -s probes/evidence_gate -p 'test_*.py' -v
+      - name: Run declared decision cases (offline)
+        run: python3 probes/evidence_gate/run.py --output _private/evidence-gate-ci
+  runtime-compat:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: probes/runtime_compat
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22.23.2'
+      - name: Install pinned smoke dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Check local stdio and SQLite compatibility
+        run: npm test

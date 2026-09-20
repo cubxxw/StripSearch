@@ -1,0 +1,27 @@
+{
+  "node": "v22.23.2",
+  "sqlite": "3.53.4",
+  "transaction_rollback": "pass",
+  "clients": [
+    {
+      "client": "v2",
+      "initialize": "pass",
+      "tools_list": "pass",
+      "structured_content": "pass",
+      "invalid_input": "rejected",
+      "resource_read": "pass"
+    },
+    {
+      "client": "v1",
+      "initialize": "pass",
+      "tools_list": "pass",
+      "structured_content": "pass",
+      "invalid_input": "rejected",
+      "resource_read": "pass"
+    }
+  ],
+  "limitations": [
+    "Package smoke, not two real MCP hosts.",
+    "No StripSearch tools, model, provider or semantic evaluation."
+  ]
+}

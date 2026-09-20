@@ -2,6 +2,7 @@
 """Offline integrity checks for authored artifacts, not research evaluations."""
 
 import json
+import os
 import re
 from pathlib import Path
 from urllib.parse import unquote, urlparse
@@ -81,9 +82,19 @@ for event in events.values():
 for unknown in data["unknowns"]:
     require(unknown in md, "Markdown missing uncertainty")
 
-for path in ROOT.rglob("*.md"):
-    if ".git" in path.parts:
-        continue
+def authored_markdown():
+    # Installed packages and local research archives are not design artifacts.
+    # Prune before descent, so installing a probe cannot invalidate this check.
+    ignored = {".git", "node_modules", ".venv", "__pycache__", "dist", "coverage",
+               "data", "workspace", "runs", "archives", "_private"}
+    for directory, subdirs, filenames in os.walk(ROOT):
+        subdirs[:] = [name for name in subdirs if name not in ignored]
+        for filename in filenames:
+            if filename.endswith(".md"):
+                yield Path(directory) / filename
+
+
+for path in authored_markdown():
     text = path.read_text()
     for href in re.findall(r"\[[^\]]*\]\(([^)]+)\)", text):
         if urlparse(href).scheme or href.startswith("#"):
@@ -93,4 +104,4 @@ for path in ROOT.rglob("*.md"):
     require("/Users/" not in text and "app.notion.com/p/" not in text, "private path/page in public docs")
 
 print("PASS: local links, 12 synthetic cases, 12 sources, report references and authored format parity.")
-print("No network, model, provider, MCP runtime or benchmark evaluation was run.")
+print("This static check does not measure network, model, provider, MCP runtime or benchmark behavior.")

@@ -6,7 +6,9 @@
 
 StripSearch 是一个以身份核验和证据追溯为核心的人物研究 Agent 设计。计划提供本地 Agent、CLI 与 MCP 接口，输出带人物索引、原始链接和证据状态的 Markdown / JSON 报告。
 
-> **当前阶段：设计基线 v0.1，2026-09-20。** 本仓库包含设计文档、接口提案、报告样例、12 个合成评估案例与静态校验。尚无可运行的研究 Agent、MCP server 或已发布安装包；第三方组合与研究效果尚未实测。
+> **当前阶段：设计基线 v0.1 + 初始化验证，2026-09-20。** 本仓库包含设计文档、接口提案、报告样例、12 个合成评估案例、静态校验与独立离线探针。尚无可运行的研究 Agent、业务 MCP server 或已发布安装包；第三方组合与研究效果尚未实测。
+
+本轮入口：[初始化调研与实施方案](docs/initialization-research.md) · [验证记录](docs/initialization-validation.md)。探针验证程序约束与依赖兼容，不代表原 12 个研究案例或真实人物评测已通过。
 
 ## 一份好报告应该回答
 
@@ -57,4 +59,4 @@ flowchart LR
 
 ---
 
-**English:** StripSearch is a design-stage, evidence-first research agent for public professional activity and authorized materials. It separates identity linkage, observed actions, attributed statements and hypotheses. Planned interfaces are a local agent, CLI and MCP; reports share a canonical JSON model. No runtime or benchmark results are released yet.
+**English:** StripSearch is a design-stage, evidence-first research agent for public professional activity and authorized materials. It separates identity linkage, observed actions, attributed statements and hypotheses. Planned interfaces are a local agent, CLI and MCP; reports share a canonical JSON model. Disposable offline probes are available; no production research runtime or benchmark results are released yet.
