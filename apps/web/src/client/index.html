@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <meta
+      name="description"
+      content="StripSearch：输入公开账号与问题，沿证据查看作品、经历与公开观点。"
+    />
+    <title>StripSearch · Evidence Terminal</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">跳到主要内容</a>
+
+    <header class="site-nav">
+      <div class="container nav-inner">
+        <a class="brand" href="#/" id="brand-home" data-nav-home aria-label="StripSearch 首页">
+          <span class="brand-mark" aria-hidden="true">SS</span>
+          <span>StripSearch</span>
+        </a>
+        <nav class="nav-links" aria-label="主要导航">
+          <a href="#example">出处示例</a>
+        </nav>
+        <div class="nav-actions">
+          <a class="button ghost" href="https://github.com/cubxxw/StripSearch" target="_blank" rel="noopener noreferrer">GitHub</a>
+          <button class="button" type="button" id="open-auth" hidden>登录 / 注册</button>
+          <div class="user-menu" id="user-menu" hidden>
+            <span class="user-name" id="user-name"></span>
+            <button class="button" type="button" id="open-app">打开工作台</button>
+            <button class="button ghost" type="button" id="sign-out">退出</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div id="page">
+      <main id="main">
+        <!-- ============ HOME ============ -->
+        <div id="view-home">
+          <section class="container hero" aria-labelledby="hero-title">
+            <div class="hero-copy">
+              <h1 id="hero-title">想了解谁？</h1>
+              <p class="hero-lead">查公开资料，点开来源核对。</p>
+            </div>
+
+            <div class="composer-wrap">
+              <form class="composer" id="research-form" novalidate>
+                <div class="composer-body">
+                  <div class="field">
+                    <div class="field-head">
+                      <label for="research-question">你想查什么？ <span class="required">必填</span></label>
+                      <button class="clear-input" id="clear-question" type="button" hidden>清空</button>
+                    </div>
+                    <textarea
+                      id="research-question"
+                      name="question"
+                      rows="3"
+                      aria-describedby="question-help question-error"
+                      placeholder="simonw 做过哪些公开项目？"
+                    ></textarea>
+                    <span class="helper keyboard-hint" id="question-help">⌘ / Ctrl + Enter 开始</span>
+                    <span class="error-text" id="question-error" role="alert"></span>
+                  </div>
+
+                  <fieldset class="source-select" id="source-select">
+                    <legend class="source-legend">资料来源</legend>
+                    <div class="segmented">
+                      <label class="segment">
+                        <input type="radio" name="provider" value="github" checked />
+                        <span>GitHub 公开账号</span>
+                      </label>
+                      <label class="segment" id="exa-segment">
+                        <input type="radio" name="provider" value="exa" />
+                        <span>Exa 网页检索<small id="exa-status">检查中…</small></span>
+                      </label>
+                    </div>
+                  </fieldset>
+
+                  <div class="composer-actions">
+                    <button class="button primary" type="submit" id="submit-research">开始研究</button>
+                    <button class="button" type="button" id="open-example">填入示例</button>
+                  </div>
+                  <p class="form-status" id="form-status" role="status"></p>
+
+                  <div class="example-row">
+                    <span class="helper">试试这些问题</span>
+                    <div class="example-rail" aria-label="示例问题">
+                      <button class="example" type="button" data-profile="https://github.com/simonw" data-question="simonw 做过哪些公开项目？">simonw 做过哪些公开项目？</button>
+                      <button class="example" type="button" data-profile="https://github.com/simonw" data-question="simonw 的公开资料怎么写他的工作？">他的公开资料怎么说？</button>
+                      <button class="example" type="button" data-profile="https://github.com/simonw" data-question="simonw 最近在更新什么？">最近在更新什么？</button>
+                    </div>
+                  </div>
+
+                  <details class="scope" id="more-settings">
+                    <summary><span>添加主页（可选）</span></summary>
+                    <div>
+                      <div class="field">
+                        <label for="profile-url">主页链接</label>
+                        <input
+                          id="profile-url"
+                          name="profile"
+                          type="url"
+                          inputmode="url"
+                          autocomplete="url"
+                          aria-describedby="profile-help profile-error"
+                          placeholder="https://github.com/handle"
+                        />
+                        <span class="helper" id="profile-help">例如 https://github.com/simonw</span>
+                        <span class="error-text" id="profile-error" role="alert"></span>
+                      </div>
+                    </div>
+                  </details>
+
+                  <details class="demo-note">
+                    <summary>研究边界</summary>
+                    <p>只做公开职业研究；不查私人住址、联系方式或身份揭露。</p>
+                  </details>
+                </div>
+              </form>
+            </div>
+          </section>
+
+          <section class="section" id="example" aria-labelledby="example-title">
+            <div class="container">
+              <div class="section-heading">
+                <h2 id="example-title">点开出处，再下结论。</h2>
+              </div>
+              <div class="evidence-example">
+                <div class="example-col">
+                  <div class="claim">
+                    <span class="source-label">01 / 查看</span>
+                    <strong>原文说了什么？</strong>
+                    <p>从引用跳到来源，查看摘录和原链接。</p>
+                  </div>
+                  <button class="button" type="button" id="open-example-2">填入示例 →</button>
+                </div>
+                <div class="example-col">
+                  <div class="source-preview">
+                    <span class="source-label">02 / 修订</span>
+                    <strong>不相关，就排除。</strong>
+                    <p>相关结论随即标记待复核。可随时恢复。</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <details class="container scope-note" id="boundaries">
+            <summary>公开职业研究 · 适用范围</summary>
+            <p>用于采访准备、作品研究和授权自我研究。保留出处、反证和未知；不提供人格评分、招聘筛选、私人调查或身份猜测。</p>
+          </details>
+        </div>
+
+        <!-- ============ APP ============ -->
+        <div id="view-app" hidden>
+          <div class="app-shell" id="app-shell">
+            <aside class="history-rail" aria-label="研究历史">
+              <div class="rail-head">
+                <button class="button" id="new-research" type="button">新建研究</button>
+                <button class="button ghost" id="rail-return-home" type="button">返回首页</button>
+              </div>
+              <div id="history-list"></div>
+            </aside>
+
+            <section class="work-main" aria-label="研究与报告">
+              <header class="work-header">
+                <div class="work-title">
+                  <strong id="work-title-text">未命名研究</strong>
+                  <span class="work-state" id="desk-state">等待确认</span>
+                  <span class="work-revision mono" id="work-revision"></span>
+                </div>
+                <div class="work-actions">
+                  <button class="button" id="stop-run" type="button" hidden>取消</button>
+                  <button class="button" id="copy-report" type="button" disabled>复制报告</button>
+                  <button class="button" id="download-md" type="button" disabled>下载 Markdown</button>
+                  <button class="button" id="download-json" type="button" disabled>下载 JSON</button>
+                  <button class="button" id="retry-run" type="button" hidden>重试</button>
+                  <button class="button danger" id="delete-run" type="button" hidden>删除</button>
+                  <button class="button narrow-only" id="open-mobile-history" type="button">研究历史</button>
+                  <button class="button narrow-only" id="open-mobile-sources" type="button">出处</button>
+                  <button class="button wide-only" id="toggle-inspector" type="button" aria-pressed="true">收起出处</button>
+                  <button class="button" id="app-return-home" type="button">返回首页</button>
+                </div>
+              </header>
+
+              <div class="work-body" id="work-body">
+                <div class="request-message">
+                  <span>你 · 研究问题</span>
+                  <p class="report-question" id="report-question">等待研究问题</p>
+                </div>
+
+                <section class="stage-panel" id="needs-input-panel" hidden aria-labelledby="needs-input-title">
+                  <div class="panel-bar mono"><span>需要补充</span><span>不会自动猜测</span></div>
+                  <div class="panel-content">
+                    <h3 id="needs-input-title">还缺一个能确认身份的主页</h3>
+                    <p id="needs-input-prompt"></p>
+                    <div class="field">
+                      <label for="resume-seed">主页链接</label>
+                      <input id="resume-seed" type="url" inputmode="url" placeholder="https://github.com/handle" />
+                      <span class="error-text" id="resume-error" role="alert"></span>
+                    </div>
+                    <button class="button primary" id="resume-run" type="button">继续研究</button>
+                  </div>
+                </section>
+
+                <details class="stage-panel" id="activity-panel" hidden>
+                  <summary class="panel-bar">
+                    <span>研究过程</span>
+                    <span class="panel-state"><span class="run-indicator" id="run-indicator" hidden aria-hidden="true"></span><span id="activity-state">等待</span></span>
+                  </summary>
+                  <div class="progress-row">
+                    <div class="run-progress" id="run-progress" role="progressbar" aria-valuemin="0" aria-valuemax="1" aria-valuenow="0" aria-valuetext="尚未开始" aria-label="研究步骤进度">
+                      <span class="run-progress-fill" id="run-progress-fill"></span>
+                    </div>
+                    <span class="progress-text mono" id="run-progress-text">0 / 0</span>
+                  </div>
+                  <div id="stage-list"></div>
+                </details>
+
+                <div id="report" class="report"></div>
+
+                <div id="chat-log" class="chat-log" aria-live="polite"></div>
+              </div>
+
+              <div class="chat-dock">
+                <div class="followup-rail" id="followup-rail" hidden></div>
+                <form class="chat-form" id="chat-form">
+                  <label class="sr-only" for="chat-input">追问</label>
+                  <input id="chat-input" type="text" autocomplete="off" placeholder="就这份报告继续追问…" disabled />
+                  <button class="button primary" type="submit" id="chat-send" disabled>发送</button>
+                </form>
+                <small id="chat-hint">报告完成后可以继续追问；追问会创建一份可见的子研究。</small>
+              </div>
+            </section>
+
+            <aside class="source-inspector" id="source-inspector" aria-label="出处检查器">
+              <div class="inspector-head">
+                <strong>出处</strong>
+                <button class="inspector-close" id="desktop-close-inspector" type="button" aria-label="收起出处">×</button>
+              </div>
+              <div class="source-filters" id="source-filters" role="group" aria-label="来源筛选"></div>
+              <div class="source-list" id="inspector-source-list" role="listbox" aria-label="来源列表"></div>
+              <div class="source-detail" id="inspector-detail" aria-live="polite">
+                <p class="source-placeholder">选择一条来源查看原文、状态与操作。</p>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </main>
+
+      <footer class="site-footer" id="site-footer">
+        <div class="container footer-inner">
+          <p>StripSearch · 公开资料，有据可查。</p>
+          <p><a href="https://github.com/cubxxw/StripSearch" target="_blank" rel="noopener noreferrer">源码与设计</a></p>
+        </div>
+      </footer>
+    </div>
+
+    <!-- Auth dialog (native modal: background inert, Escape closes, focus returns) -->
+    <dialog id="auth-dialog" class="modal" aria-labelledby="auth-title">
+      <div class="modal-head">
+        <h2 id="auth-title">登录 StripSearch</h2>
+        <button class="inspector-close" type="button" data-close-auth aria-label="关闭">×</button>
+      </div>
+      <p class="modal-note" id="auth-note">登录后保存研究记录。</p>
+      <div class="auth-tabs" role="tablist" aria-label="登录或注册">
+        <button class="auth-tab" type="button" role="tab" id="tab-signin" aria-selected="true" data-auth-mode="signin">登录</button>
+        <button class="auth-tab" type="button" role="tab" id="tab-signup" aria-selected="false" data-auth-mode="signup">注册</button>
+      </div>
+      <form id="auth-form" novalidate>
+        <div class="field" id="auth-name-field" hidden>
+          <label for="auth-name">显示名称</label>
+          <input id="auth-name" name="name" type="text" autocomplete="nickname" maxlength="60" />
+          <span class="error-text" id="auth-name-error" role="alert"></span>
+        </div>
+        <div class="field">
+          <label for="auth-email">邮箱</label>
+          <input id="auth-email" name="email" type="email" autocomplete="email" maxlength="254" />
+          <span class="error-text" id="auth-email-error" role="alert"></span>
+        </div>
+        <div class="field">
+          <div class="field-head">
+            <label for="auth-password">密码</label>
+            <button class="clear-input" id="toggle-password" type="button" aria-pressed="false">显示</button>
+          </div>
+          <input id="auth-password" name="password" type="password" autocomplete="current-password" minlength="8" maxlength="128" />
+          <span class="error-text" id="auth-password-error" role="alert"></span>
+        </div>
+        <div class="form-status" id="auth-status" role="status"></div>
+        <div class="composer-actions">
+          <button class="button primary" type="submit" id="auth-submit">登录</button>
+          <button class="button ghost" type="button" data-close-auth>取消</button>
+        </div>
+        <p class="auth-disclosure" id="auth-disclosure"></p>
+      </form>
+    </dialog>
+
+    <dialog id="history-drawer" class="drawer" aria-labelledby="history-drawer-title">
+      <div class="drawer-head">
+        <strong id="history-drawer-title">研究历史</strong>
+        <button class="inspector-close" type="button" data-close-history aria-label="关闭">×</button>
+      </div>
+      <div id="drawer-history-list"></div>
+    </dialog>
+
+    <dialog id="source-drawer" class="drawer" aria-labelledby="source-drawer-title">
+      <div class="drawer-head">
+        <strong id="source-drawer-title">出处</strong>
+        <button class="inspector-close" type="button" data-close-source aria-label="关闭">×</button>
+      </div>
+      <div class="source-filters" id="drawer-source-filters" role="group" aria-label="来源筛选"></div>
+      <div class="source-list" id="drawer-source-list" role="listbox" aria-label="来源列表"></div>
+      <div class="source-detail" id="drawer-source-detail"></div>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+    <script type="module" src="/main.ts"></script>
+  </body>
+</html>

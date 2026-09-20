@@ -1,6 +1,6 @@
 # Web 运行时实施契约
 
-状态：实施中。静态设计仍位于 `design/web`；本文件定义独立可运行 Web alpha，不代表 M1–M4 整体通过。
+状态：本文件定义的独立可运行 Web alpha 已落在 `apps/web`（同源认证 + SQLite 作业 + GitHub 适配器 + 可选 Exa + 导出 + UI）。静态设计仍位于 `design/web`。该 alpha **不代表** M1–M4 整体通过，也不代表 Exa 真机或评测已验收。
 
 ## 本轮交付
 
@@ -31,6 +31,29 @@ Exa 使用固定官方 endpoint、超时、响应大小和结果数限制，不�
 ## 验证重点
 
 认证 cookie、错误密码、退出失效、跨账号隔离、Origin 拒绝、幂等冲突、重启持久化、取消不被晚回包覆盖、来源撤回与导出一致、供应商超时 / 429 / 错误 / 非法引用、UI 空白 / 加载 / 错误 / 重试、375px 不溢出、系统主题与 reduced motion。
+
+## 已实现与实测限制
+
+入口为 `apps/web`（TypeScript、Express 5.2.1、Better Auth 1.7.5、better-sqlite3 13.0.3、Vite 8.3.0，Node 22.23.2，lockfile 已提交）。运行：
+
+```bash
+npm --prefix apps/web ci
+npm --prefix apps/web run build
+npm --prefix apps/web start   # http://localhost:4392
+```
+
+- 认证：真实邮箱密码注册 / 登录 / 退出 / 会话；cookie 前缀 `stripsearch`、HttpOnly、SameSite=Lax、7 天；注册输入受限；认证请求体按实际字节限制（含 chunked），限流开发环境也启用；私有 `/api` 响应 `no-store`。
+- 作业：单进程持久化队列（每用户 1、全局 3），`queued → researching → completed | partial | failed | cancelled | needs_input`；启动限流每用户 60 秒 10 次，记录上限 200。
+- 研究：仅同一 `Idempotency-Key` + 同一规范化请求返回已有运行，已删除记录返回 410，不隐式重新调用；新键或省略键创建新研究；取消 / 删除后晚回包被丢弃（删除先中止作业）；重启把未完成作业转为 `partial` 并记 `interrupted`，不自动重跑。
+- Provider：GitHub 固定 `https://api.github.com`，仅接受与请求 handle 一致的账号与仓库，每账号 2 次请求、一页 30 个仓库、最多展示 8 个非 fork 作品；Exa 固定 `https://api.exa.ai`，检索与整理回答都以种子 grounded，引用必须全部有效且映射到来源，否则不采用整理结果；两者超时 15 秒、响应 512 KiB。
+- 来源修订：排除 / 恢复基于 `expectedRevision`，过期返回 409；依赖结论、SSE 与 Markdown / JSON 导出读取同一规范化视图。
+- 界面：系统明暗主题、reduced motion、SSE 重连与会话撤销后关闭、来源抽屉焦点保留、44px 触控目标；动效只用 transform / opacity；异步请求按运行 / 会话世代丢弃迟到结果。
+
+已由 `npm --prefix apps/web test` 离线验证：认证 cookie 与退出、跨账号授权、Origin 拒绝、边界（含 chunked 超限）与幂等键语义、并发、取消 / 删除晚回包、重启中断保留、适配器固定端点 / 账号归属 / 超时 / 重定向 / 429 / 403 / 404 / 非法引用、来源修订与导出一致、SSE 终态与会话撤销、jsdom 真实控制器回归与渲染转义 / 链接安全。
+
+独立验收：63 项运行时测试、36 项静态设计交互测试、三套 TypeScript 检查和生产构建通过。真实 GitHub 调研完成（2 次请求、9 条来源）；账号隔离、退出失效、来源修订、Markdown / JSON 一致和服务重启持久化通过。Safari 完成登录与真实调研；内嵌 Chromium 完成历史恢复、引用、排除 / 恢复、刷新、明暗主题和 375px / reduced-motion 检查，控制台无错误。
+
+未验证：真实 Exa 服务与回答质量、MCP 宿主、TikHub、本地档案、研究效果评测和公网部署。邮箱未验证，邮件找回与 OAuth 未实现；GitHub 只读元数据。
 
 ## 官方接口依据
 
