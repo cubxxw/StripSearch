@@ -1,0 +1,226 @@
+TAP version 13
+# Subtest: no external scripts, stylesheets or font imports are required
+ok 1 - no external scripts, stylesheets or font imports are required
+  ---
+  duration_ms: 2.132542
+  type: 'test'
+  ...
+# Subtest: initial state: home view, report absent, export actions disabled
+ok 2 - initial state: home view, report absent, export actions disabled
+  ---
+  duration_ms: 399.478792
+  type: 'test'
+  ...
+# Subtest: follow-up composer cannot answer before a report and resets with a new research
+ok 3 - follow-up composer cannot answer before a report and resets with a new research
+  ---
+  duration_ms: 248.680625
+  type: 'test'
+  ...
+# Subtest: the clear control appears only with content and returns focus
+ok 4 - the clear control appears only with content and returns focus
+  ---
+  duration_ms: 80.188917
+  type: 'test'
+  ...
+# Subtest: Cmd/Ctrl+Enter submits once, ignoring IME composition and key repeat
+ok 5 - Cmd/Ctrl+Enter submits once, ignoring IME composition and key repeat
+  ---
+  duration_ms: 173.597958
+  type: 'test'
+  ...
+# Subtest: validation rejects a malformed https:// URL, exposes aria-invalid and focuses it
+ok 6 - validation rejects a malformed https:// URL, exposes aria-invalid and focuses it
+  ---
+  duration_ms: 121.611
+  type: 'test'
+  ...
+# Subtest: validation rejects non-http schemes and bare hostnames
+ok 7 - validation rejects non-http schemes and bare hostnames
+  ---
+  duration_ms: 168.469708
+  type: 'test'
+  ...
+# Subtest: validation requires a question and focuses the question field
+ok 8 - validation requires a question and focuses the question field
+  ---
+  duration_ms: 104.513708
+  type: 'test'
+  ...
+# Subtest: a valid submission opens the app view with an unconfirmed identity and no report
+ok 9 - a valid submission opens the app view with an unconfirmed identity and no report
+  ---
+  duration_ms: 121.338875
+  type: 'test'
+  ...
+# Subtest: wrong identity candidate cannot start Lantern research
+ok 10 - wrong identity candidate cannot start Lantern research
+  ---
+  duration_ms: 174.210292
+  type: 'test'
+  ...
+# Subtest: pause and resume use a single run timer and complete the scripted run
+ok 11 - pause and resume use a single run timer and complete the scripted run
+  ---
+  duration_ms: 113.301334
+  type: 'test'
+  ...
+# Subtest: progress follows completed steps, holds while paused and finishes once
+ok 12 - progress follows completed steps, holds while paused and finishes once
+  ---
+  duration_ms: 199.341667
+  type: 'test'
+  ...
+# Subtest: new research clears messages, errors, report, selection and disables export
+ok 13 - new research clears messages, errors, report, selection and disables export
+  ---
+  duration_ms: 209.031584
+  type: 'test'
+  ...
+# Subtest: withdrawing S2 marks every dependent displayed statement and the export
+ok 14 - withdrawing S2 marks every dependent displayed statement and the export
+  ---
+  duration_ms: 251.30125
+  type: 'test'
+  ...
+# Subtest: restoring S2 restores every statement and clears the export marker
+ok 15 - restoring S2 restores every statement and clears the export marker
+  ---
+  duration_ms: 136.0415
+  type: 'test'
+  ...
+# Subtest: excluding S2 offers an in-context undo, and reset clears stale undo state
+ok 16 - excluding S2 offers an in-context undo, and reset clears stale undo state
+  ---
+  duration_ms: 390.641083
+  type: 'test'
+  ...
+# Subtest: undo works inside the mobile source drawer while the background stays inert
+ok 17 - undo works inside the mobile source drawer while the background stays inert
+  ---
+  duration_ms: 97.452667
+  type: 'test'
+  ...
+# Subtest: scripted responses given before withdrawal are marked pending review too
+ok 18 - scripted responses given before withdrawal are marked pending review too
+  ---
+  duration_ms: 79.123125
+  type: 'test'
+  ...
+# Subtest: quick follow-ups sit next to the composer and leave the draft untouched
+ok 19 - quick follow-ups sit next to the composer and leave the draft untouched
+  ---
+  duration_ms: 73.008
+  type: 'test'
+  ...
+# Subtest: sending a follow-up clears the input only after a successful send and keeps focus
+ok 20 - sending a follow-up clears the input only after a successful send and keeps focus
+  ---
+  duration_ms: 145.262291
+  type: 'test'
+  ...
+# Subtest: arbitrary follow-ups state the scripted prototype boundary honestly
+ok 21 - arbitrary follow-ups state the scripted prototype boundary honestly
+  ---
+  duration_ms: 158.372958
+  type: 'test'
+  ...
+# Subtest: copy report resolves asynchronously, then reports success
+ok 22 - copy report resolves asynchronously, then reports success
+  ---
+  duration_ms: 147.72725
+  type: 'test'
+  ...
+# Subtest: a rejected clipboard reports the download fallback instead of success
+ok 23 - a rejected clipboard reports the download fallback instead of success
+  ---
+  duration_ms: 138.286583
+  type: 'test'
+  ...
+# Subtest: a synchronously blocked clipboard never claims success
+ok 24 - a synchronously blocked clipboard never claims success
+  ---
+  duration_ms: 165.476667
+  type: 'test'
+  ...
+# Subtest: copy stays gated before a report and warns when the clipboard is missing
+ok 25 - copy stays gated before a report and warns when the clipboard is missing
+  ---
+  duration_ms: 202.111708
+  type: 'test'
+  ...
+# Subtest: report headings keep fact, inference and unknown separation
+ok 26 - report headings keep fact, inference and unknown separation
+  ---
+  duration_ms: 88.953583
+  type: 'test'
+  ...
+# Subtest: source panel uses plain labels and explains what a source cannot show
+ok 27 - source panel uses plain labels and explains what a source cannot show
+  ---
+  duration_ms: 104.152417
+  type: 'test'
+  ...
+# Subtest: source filters work, empty state appears, and retry keeps S4 excluded
+ok 28 - source filters work, empty state appears, and retry keeps S4 excluded
+  ---
+  duration_ms: 165.242792
+  type: 'test'
+  ...
+# Subtest: home citations open a visible source drawer, trap focus and close with Escape
+ok 29 - home citations open a visible source drawer, trap focus and close with Escape
+  ---
+  duration_ms: 131.856125
+  type: 'test'
+  ...
+# Subtest: closed drawers are hidden, inert and out of the tab order
+ok 30 - closed drawers are hidden, inert and out of the tab order
+  ---
+  duration_ms: 79.144459
+  type: 'test'
+  ...
+# Subtest: nav and example shortcuts open the full demo
+ok 31 - nav and example shortcuts open the full demo
+  ---
+  duration_ms: 87.105208
+  type: 'test'
+  ...
+# Subtest: narrow-screen app sources open a drawer and widening does not strand the inspector
+ok 32 - narrow-screen app sources open a drawer and widening does not strand the inspector
+  ---
+  duration_ms: 146.902333
+  type: 'test'
+  ...
+# Subtest: reduced-motion mode still completes the scripted run
+ok 33 - reduced-motion mode still completes the scripted run
+  ---
+  duration_ms: 73.464542
+  type: 'test'
+  ...
+# Subtest: markdown export carries the question and the synthetic badge
+ok 34 - markdown export carries the question and the synthetic badge
+  ---
+  duration_ms: 134.955084
+  type: 'test'
+  ...
+# Subtest: pending copy cannot show success in a new research
+ok 35 - pending copy cannot show success in a new research
+  ---
+  duration_ms: 120.113208
+  type: 'test'
+  ...
+# Subtest: source changes during copy require copying the updated report
+ok 36 - source changes during copy require copying the updated report
+  ---
+  duration_ms: 96.705417
+  type: 'test'
+  ...
+1..36
+# tests 36
+# suites 0
+# pass 36
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5337.098083

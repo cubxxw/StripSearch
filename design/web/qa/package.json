@@ -1,0 +1,13 @@
+{
+  "name": "stripsearch-prototype-qa",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Offline jsdom checks for the StripSearch Evidence Terminal prototype.",
+  "type": "commonjs",
+  "scripts": {
+    "test": "node prototype.test.cjs"
+  },
+  "devDependencies": {
+    "jsdom": "30.1.0"
+  }
+}

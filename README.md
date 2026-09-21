@@ -6,7 +6,11 @@
 
 StripSearch 是一个以身份核验和证据追溯为核心的人物研究 Agent 设计。计划提供本地 Agent、CLI 与 MCP 接口，输出带人物索引、原始链接和证据状态的 Markdown / JSON 报告。
 
-> **当前阶段：设计基线 v0.1，2026-09-20。** 本仓库包含设计文档、接口提案、报告样例、12 个合成评估案例与静态校验。尚无可运行的研究 Agent、MCP server 或已发布安装包；第三方组合与研究效果尚未实测。
+> **当前阶段：设计基线 v0.1 + 可运行 Web alpha，2026-09-21。** 邮箱登录、研究记录、GitHub 公开资料读取和来源修订已实现并验收。Exa 适配器已实现，真实服务待配置；完整 Agent、CLI、MCP 和研究效果评测尚未交付。
+
+**Web 入口：** [`apps/web`](apps/web/README.md) 提供同一份 canonical 报告上的真实认证、按账号隔离的 SQLite 研究作业、GitHub 公开资料读取、可选 Exa 检索与 Markdown / JSON 导出。运行方式、实际限制与未验证边界见该说明；这不代表 M1–M4 整体通过。
+
+本轮入口：[初始化调研与实施方案](docs/initialization-research.md) · [验证记录](docs/initialization-validation.md)。探针验证程序约束与依赖兼容，不代表原 12 个研究案例或真实人物评测已通过。
 
 ## 一份好报告应该回答
 
@@ -22,6 +26,7 @@ StripSearch 是一个以身份核验和证据追溯为核心的人物研究 Agen
 | 要了解什么 | 去哪里 |
 |---|---|
 | 为谁做、差异在哪里、什么值得验证 | [产品设计](docs/product.md) |
+| 对外研究入口、Chat 与证据核查交互 | [Web 设计](docs/web-design.md) |
 | 身份 → 行动 → 经历 → 第三方观察 → 可修订判断 | [研究方法](docs/research-method.md) |
 | Agent、存档、证据依赖与失败恢复 | [系统架构](docs/architecture.md) |
 | MCP、可配置首屏、人物索引与返回契约 | [接口设计](docs/interfaces.md) |
@@ -51,10 +56,11 @@ flowchart LR
 - 提交设计问题或失败案例：[Issue 模板](.github/ISSUE_TEMPLATE/)。请使用合成材料或有明确许可的公开职业资料。
 - 建立研究、比较方案、改变设计：[三种工作模板](templates/README.md)。
 - 校验当前设计材料：`python3 scripts/check_design.py`。它检查链接、样例与数据引用；不测试网络采集或模型效果。
+- 测试 Web：`npm --prefix apps/web test`；运行冻结回放：`npm --prefix apps/web run eval`。数据与评分边界见 [Evaluation 数据集入口](evals/README.md)。
 - 实现从[第一个里程碑](docs/roadmap.md#m1--最小可审计闭环)开始。
 
 项目代码、文档和原创合成样例采用 [Apache-2.0](LICENSE)。链接到的服务、网页、第三方代码与用户档案不因此获得本仓库许可。当前没有收录第三方网页全文。
 
 ---
 
-**English:** StripSearch is a design-stage, evidence-first research agent for public professional activity and authorized materials. It separates identity linkage, observed actions, attributed statements and hypotheses. Planned interfaces are a local agent, CLI and MCP; reports share a canonical JSON model. No runtime or benchmark results are released yet.
+**English:** StripSearch is a design-stage, evidence-first research agent for public professional activity and authorized materials. It separates identity linkage, observed actions, attributed statements and hypotheses. Planned interfaces are a local agent, CLI and MCP; reports share a canonical JSON model. A local authenticated Web alpha includes live GitHub metadata research and optional Exa adapters. CLI, MCP, production deployment and benchmark results are not released.

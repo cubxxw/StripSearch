@@ -9,6 +9,7 @@ __pycache__/
 *.pyc
 .venv/
 data/
+apps/web/.data/
 workspace/
 runs/
 archives/

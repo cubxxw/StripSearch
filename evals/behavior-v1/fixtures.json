@@ -1,0 +1,204 @@
+{
+  "dataset_version": "behavior-v1",
+  "network_access": false,
+  "sources": [
+    {
+      "source_id": "beh-01-s1",
+      "url": "https://example.org/behavior/team-credit/1",
+      "title": "发布记录（合成）",
+      "body": "Lighthouse 由星野团队发布。许岸负责文档；另一位成员负责核心实现。",
+      "entity_group": "behavior-team-credit",
+      "origin_group_id": "behavior-team-credit-1",
+      "source": "synthetic",
+      "redistribution": "Apache-2.0-original-synthetic",
+      "body_sha256": "0037ab319b4cd67cf7afa85f2b0517a9f81b956ab5796631ac2aa81ee6b49174"
+    },
+    {
+      "source_id": "beh-01-s2",
+      "url": "https://example.org/behavior/team-credit/2",
+      "title": "个人简介（合成）",
+      "body": "许岸自述：我参与了 Lighthouse 的发布。",
+      "entity_group": "behavior-team-credit",
+      "origin_group_id": "behavior-team-credit-2",
+      "source": "synthetic",
+      "redistribution": "Apache-2.0-original-synthetic",
+      "body_sha256": "54486ef9d21668cfb00488a546ca1f790e612db27230ed791f8a8b1060428627"
+    },
+    {
+      "source_id": "beh-02-s1",
+      "url": "https://example.org/behavior/claim-action/1",
+      "title": "作者预告（合成）",
+      "body": "2026-01-10，叶青表示计划在月底发布离线模式。",
+      "entity_group": "behavior-claim-action",
+      "origin_group_id": "behavior-claim-action-1",
+      "source": "synthetic",
+      "redistribution": "Apache-2.0-original-synthetic",
+      "body_sha256": "9dc48a97e70e580eee60a3568f41fd157a91c102cfdff9d0d96c34da1a9d1a76"
+    },
+    {
+      "source_id": "beh-02-s2",
+      "url": "https://example.org/behavior/claim-action/2",
+      "title": "版本记录（合成）",
+      "body": "2026-02-03 的版本记录将离线模式列为尚未开放的实验功能。",
+      "entity_group": "behavior-claim-action",
+      "origin_group_id": "behavior-claim-action-2",
+      "source": "synthetic",
+      "redistribution": "Apache-2.0-original-synthetic",
+      "body_sha256": "835d7dac62c9b6cd74455751e3fdba3d06448f34c2e9a6a56ea5ae6aba96bdfa"
+    },
+    {
+      "source_id": "beh-03-s1",
+      "url": "https://example.org/behavior/selective-review/1",
+      "title": "读者甲评论（合成）",
+      "body": "读者甲读完入门部分后评价：示例清楚，但未尝试高级章节。",
+      "entity_group": "behavior-selective-review",
+      "origin_group_id": "behavior-selective-review-1",
+      "source": "synthetic",
+      "redistribution": "Apache-2.0-original-synthetic",
+      "body_sha256": "530d9d394346f8f7add9358a044cbef9c24b74e9e90f7a76229423f4d244ad76"
+    },
+    {
+      "source_id": "beh-03-s2",
+      "url": "https://example.org/behavior/selective-review/2",
+      "title": "读者乙评论（合成）",
+      "body": "读者乙实际运行高级章节后记录：三处命令无法执行。",
+      "entity_group": "behavior-selective-review",
+      "origin_group_id": "behavior-selective-review-2",
+      "source": "synthetic",
+      "redistribution": "Apache-2.0-original-synthetic",
+      "body_sha256": "2f757e2858f2337708f14e5c17e925245db3c20e516cc3c92d0ab850a96939d6"
+    },
+    {
+      "source_id": "beh-03-s3",
+      "url": "https://example.org/behavior/selective-review/3",
+      "title": "评论转载（合成）",
+      "body": "转载读者甲的同一条评价：示例清楚。",
+      "entity_group": "behavior-selective-review",
+      "origin_group_id": "behavior-selective-review-1",
+      "source": "synthetic",
+      "redistribution": "Apache-2.0-original-synthetic",
+      "body_sha256": "6e2eb80d6c034a45f26ed5c662290e1065c123b46d754130d77bffa8bd30cc5f"
+    },
+    {
+      "source_id": "beh-04-s1",
+      "url": "https://example.org/behavior/temporal-causality/1",
+      "title": "问题反馈（合成）",
+      "body": "2026-02-01，一位用户报告导出错误。",
+      "entity_group": "behavior-temporal-causality",
+      "origin_group_id": "behavior-temporal-causality-1",
+      "source": "synthetic",
+      "redistribution": "Apache-2.0-original-synthetic",
+      "body_sha256": "0a1224f2bc94106e8699ba18afdc40cbdc2685b47a29fd018e7b55d9d84e5403"
+    },
+    {
+      "source_id": "beh-04-s2",
+      "url": "https://example.org/behavior/temporal-causality/2",
+      "title": "发布记录（合成）",
+      "body": "2026-02-05 发布了修复导出问题的更新，未说明决策原因。",
+      "entity_group": "behavior-temporal-causality",
+      "origin_group_id": "behavior-temporal-causality-2",
+      "source": "synthetic",
+      "redistribution": "Apache-2.0-original-synthetic",
+      "body_sha256": "e0f887412e676cd61bfc7b69ef17427a26f0f0eb893c35579fb70c3aba17b14a"
+    },
+    {
+      "source_id": "beh-05-s1",
+      "url": "https://example.org/behavior/effort-proof/1",
+      "title": "作者采访（合成）",
+      "body": "孟迟自述：这项工作投入了六个月。",
+      "entity_group": "behavior-effort-proof",
+      "origin_group_id": "behavior-effort-proof-1",
+      "source": "synthetic",
+      "redistribution": "Apache-2.0-original-synthetic",
+      "body_sha256": "8e78d2b9694979950cd092b2e392d0ddaeb0ab2a9b93b96abdc914fb43644831"
+    },
+    {
+      "source_id": "beh-05-s2",
+      "url": "https://example.org/behavior/effort-proof/2",
+      "title": "仓库记录（合成）",
+      "body": "提供的仓库记录仅覆盖 2026-03-01 至 2026-03-02 的三次提交。",
+      "entity_group": "behavior-effort-proof",
+      "origin_group_id": "behavior-effort-proof-2",
+      "source": "synthetic",
+      "redistribution": "Apache-2.0-original-synthetic",
+      "body_sha256": "efffae3944d958ef658966f29f8a91793f89897e254dd7e53851b7e5e9353fdf"
+    },
+    {
+      "source_id": "beh-06-s1",
+      "url": "https://example.org/behavior/correction/1",
+      "title": "旧版文档（合成）",
+      "body": "v1 文档：不支持导出 CSV。",
+      "entity_group": "behavior-correction",
+      "origin_group_id": "behavior-correction-1",
+      "source": "synthetic",
+      "redistribution": "Apache-2.0-original-synthetic",
+      "body_sha256": "36dc179130bad48044b9a311576ccc0f61c816d1056d8af27ec59ea2d9f97378"
+    },
+    {
+      "source_id": "beh-06-s2",
+      "url": "https://example.org/behavior/correction/2",
+      "title": "新版文档（合成）",
+      "body": "v2 文档：新增 CSV 导出。",
+      "entity_group": "behavior-correction",
+      "origin_group_id": "behavior-correction-2",
+      "source": "synthetic",
+      "redistribution": "Apache-2.0-original-synthetic",
+      "body_sha256": "21b930026579d769bb07f8b46bb52737c59e39a7e6fa13a1fc20317aab49300b"
+    },
+    {
+      "source_id": "beh-06-s3",
+      "url": "https://example.org/behavior/correction/3",
+      "title": "版本时间（合成）",
+      "body": "v1 发布于 2026-01-01，v2 发布于 2026-03-01；本题时间为 2026-03-02。",
+      "entity_group": "behavior-correction",
+      "origin_group_id": "behavior-correction-3",
+      "source": "synthetic",
+      "redistribution": "Apache-2.0-original-synthetic",
+      "body_sha256": "7154c80575c8bc7f3ca48f2d6fc8cc1d500bfb1f6516d179f75fea467eb7c214"
+    },
+    {
+      "source_id": "beh-07-s1",
+      "url": "https://example.org/behavior/retrospective/1",
+      "title": "后来回忆（合成）",
+      "body": "2026-02-15 的访谈中，周听回忆自己在 2020 年领导该项目。",
+      "entity_group": "behavior-retrospective",
+      "origin_group_id": "behavior-retrospective-1",
+      "source": "synthetic",
+      "redistribution": "Apache-2.0-original-synthetic",
+      "body_sha256": "29c44d2c934fbc9f3c51454da80328bfcdfa83313fb7e6e99f2d6df0e5cd208d"
+    },
+    {
+      "source_id": "beh-07-s2",
+      "url": "https://example.org/behavior/retrospective/2",
+      "title": "当年名单（合成）",
+      "body": "2020 年发布名单写明项目负责人是陈予；周听列为协作者。",
+      "entity_group": "behavior-retrospective",
+      "origin_group_id": "behavior-retrospective-2",
+      "source": "synthetic",
+      "redistribution": "Apache-2.0-original-synthetic",
+      "body_sha256": "c56f5b1d264abd4ff58629b2f86bc35ac55eb60669ef3589bf198700794c61ba"
+    },
+    {
+      "source_id": "beh-08-s1",
+      "url": "https://example.org/behavior/sparse/1",
+      "title": "公开主页（合成）",
+      "body": "程夏发布过一个图表工具，未提供团队协作信息。",
+      "entity_group": "behavior-sparse",
+      "origin_group_id": "behavior-sparse-1",
+      "source": "synthetic",
+      "redistribution": "Apache-2.0-original-synthetic",
+      "body_sha256": "8d9bd158d390ad9aeb8bff7fe25487ca14c4278ce6b5fa334108268b62ef977e"
+    },
+    {
+      "source_id": "beh-08-s2",
+      "url": "https://example.org/behavior/sparse/2",
+      "title": "项目说明（合成）",
+      "body": "项目说明介绍安装方法，没有协作过程、交流记录或他人观察。",
+      "entity_group": "behavior-sparse",
+      "origin_group_id": "behavior-sparse-2",
+      "source": "synthetic",
+      "redistribution": "Apache-2.0-original-synthetic",
+      "body_sha256": "f3e423da83bdf7e267a3685190ea53a90627df7a1d98ff6d74918545a964e999"
+    }
+  ]
+}

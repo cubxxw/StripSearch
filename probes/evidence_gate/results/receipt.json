@@ -1,0 +1,1397 @@
+{
+  "artifact_scan": {
+    "matches": [],
+    "passed": true
+  },
+  "automated_verdict": "supported",
+  "cases": [
+    {
+      "case_id": "valid-unaffected-branch",
+      "checks": [
+        {
+          "detail": "no GateError",
+          "name": "gate_accepts_valid_snapshot",
+          "passed": true
+        },
+        {
+          "detail": "claims=['claim-author', 'claim-cross', 'claim-mixed', 'claim-release', 'claim-wang']",
+          "name": "internal_keeps_unaffected_and_private",
+          "passed": true
+        },
+        {
+          "detail": "claims=['claim-author', 'claim-cross', 'claim-release']",
+          "name": "public_keeps_public_branch",
+          "passed": true
+        },
+        {
+          "detail": "eligibility=(True, None)",
+          "name": "self_source_excerpt_is_anchor",
+          "passed": true
+        }
+      ],
+      "observed_facts": [
+        "有效合成快照通过结构与资格门禁",
+        "内部导出保留公共与私有分支；公共导出保留未受影响的公共分支",
+        "自述来源摘录被当作锚点，不需要额外身份依赖"
+      ],
+      "title": "有效快照通过门禁，未受影响分支同时出现在内部与公共导出",
+      "trace": [
+        {
+          "claims": [
+            "claim-author",
+            "claim-cross",
+            "claim-mixed",
+            "claim-release",
+            "claim-wang"
+          ],
+          "revision": 1,
+          "step": "before"
+        },
+        {
+          "action": "validate_snapshot",
+          "result": "accepted",
+          "step": "gate"
+        },
+        {
+          "public_claims": [
+            "claim-author",
+            "claim-cross",
+            "claim-release"
+          ],
+          "revision": 1,
+          "step": "after"
+        }
+      ]
+    },
+    {
+      "case_id": "same-name-unlinked-source",
+      "checks": [
+        {
+          "detail": "observed claim_source_unlinked",
+          "name": "same_name_claim_rejected",
+          "passed": true
+        },
+        {
+          "detail": "eligibility treats s-name-only as unlinked despite matching display name",
+          "name": "no_name_based_linking",
+          "passed": true
+        }
+      ],
+      "observed_facts": [
+        "姓名相同不会产生身份链接（没有名称推断）",
+        "使用未绑定来源的断言被门禁拒绝"
+      ],
+      "title": "同名但未显式绑定的来源不能支持断言",
+      "trace": [
+        {
+          "identity_links": 5,
+          "step": "before"
+        },
+        {
+          "action": "claim-name via s-name-only",
+          "result": "claim_source_unlinked",
+          "step": "gate"
+        }
+      ]
+    },
+    {
+      "case_id": "ineligible-identity-link-states",
+      "checks": [
+        {
+          "detail": "observed claim_source_unlinked",
+          "name": "state_rejected_claim_rejected",
+          "passed": true
+        },
+        {
+          "detail": "(False, 'state_rejected')",
+          "name": "state_rejected_ineligible",
+          "passed": true
+        },
+        {
+          "detail": "observed claim_source_unlinked",
+          "name": "state_candidate_claim_rejected",
+          "passed": true
+        },
+        {
+          "detail": "(False, 'state_candidate')",
+          "name": "state_candidate_ineligible",
+          "passed": true
+        },
+        {
+          "detail": "observed claim_source_unlinked",
+          "name": "state_disputed_claim_rejected",
+          "passed": true
+        },
+        {
+          "detail": "(False, 'state_disputed')",
+          "name": "state_disputed_ineligible",
+          "passed": true
+        },
+        {
+          "detail": "eligibility=(False, 'state_rejected')",
+          "name": "rejected_cross_link_not_re_elevated",
+          "passed": true
+        },
+        {
+          "detail": "observed claim_source_unlinked",
+          "name": "rejected_cross_link_claim_rejected",
+          "passed": true
+        }
+      ],
+      "observed_facts": [
+        "只有 linked 状态可用于支持断言",
+        "rejected / candidate / disputed 链接保持不合格"
+      ],
+      "title": "rejected / candidate / disputed 身份链接不可用于支持",
+      "trace": [
+        {
+          "action": "set link person-lz/s-news to rejected|candidate|disputed",
+          "step": "op"
+        },
+        {
+          "action": "claim-release support",
+          "result": "claim_source_unlinked",
+          "step": "gate"
+        }
+      ]
+    },
+    {
+      "case_id": "inaccessible-source-attempted-quote",
+      "checks": [
+        {
+          "detail": "observed source_inaccessible",
+          "name": "inaccessible_quote_rejected",
+          "passed": true
+        }
+      ],
+      "observed_facts": [
+        "fetch_status=inaccessible 的来源不能被引用",
+        "null body 不能产生摘录"
+      ],
+      "title": "不可读来源（body=null）上的引用被拒绝",
+      "trace": [
+        {
+          "body": null,
+          "fetch_status": "inaccessible",
+          "source": "s-blocked",
+          "step": "before"
+        },
+        {
+          "action": "quote s-blocked",
+          "result": "source_inaccessible",
+          "step": "gate"
+        }
+      ]
+    },
+    {
+      "case_id": "forged-excerpt",
+      "checks": [
+        {
+          "detail": "observed excerpt_not_found",
+          "name": "forged_excerpt_rejected",
+          "passed": true
+        }
+      ],
+      "observed_facts": [
+        "摘录必须是合成来源正文的精确子串"
+      ],
+      "title": "摘录不在合成正文中时被拒绝",
+      "trace": [
+        {
+          "body": "该页面只有普通陈述。",
+          "source": "s-forged",
+          "step": "before"
+        },
+        {
+          "action": "quote absent sentence",
+          "result": "excerpt_not_found",
+          "step": "gate"
+        }
+      ]
+    },
+    {
+      "case_id": "broken-references",
+      "checks": [
+        {
+          "detail": "observed unknown_reference",
+          "name": "broken_claim_ref",
+          "passed": true
+        },
+        {
+          "detail": "observed unknown_reference",
+          "name": "broken_identity_basis",
+          "passed": true
+        },
+        {
+          "detail": "observed unknown_reference",
+          "name": "broken_event_ref",
+          "passed": true
+        },
+        {
+          "detail": "observed unknown_reference",
+          "name": "broken_hypothesis_ref",
+          "passed": true
+        }
+      ],
+      "observed_facts": [
+        "所有外键（含人物/档案身份证据、事件与假设边）都必须存在"
+      ],
+      "title": "断裂外键（claim/identity/event/hypothesis）被拒绝",
+      "trace": [
+        {
+          "action": "inject dangling foreign keys",
+          "result": "unknown_reference",
+          "step": "gate"
+        }
+      ]
+    },
+    {
+      "case_id": "duplicate-id-and-unknown-policy",
+      "checks": [
+        {
+          "detail": "observed duplicate_id",
+          "name": "duplicate_source_id",
+          "passed": true
+        },
+        {
+          "detail": "observed unknown_export_policy",
+          "name": "unknown_policy_fails_closed",
+          "passed": true
+        },
+        {
+          "detail": "observed claim_person_mismatch",
+          "name": "cross_person_event_claim",
+          "passed": true
+        }
+      ],
+      "observed_facts": [
+        "ID 必须唯一",
+        "未知 export_policy 失败关闭",
+        "event 不得引用他人 claim（人物对应关系）"
+      ],
+      "title": "重复 ID、未知权限枚举与跨人物 claim 关联被拒绝",
+      "trace": [
+        {
+          "action": "inject malformed variants",
+          "result": "rejected",
+          "step": "gate"
+        }
+      ]
+    },
+    {
+      "case_id": "leaf-identity-revocation-cascade",
+      "checks": [
+        {
+          "detail": "claims=['claim-author', 'claim-wang']",
+          "name": "dependent_claim_invalidated",
+          "passed": true
+        },
+        {
+          "detail": "events=['event-author']",
+          "name": "dependent_event_invalidated",
+          "passed": true
+        },
+        {
+          "detail": "hypotheses=['hyp-author']",
+          "name": "dependent_hypothesis_invalidated",
+          "passed": true
+        },
+        {
+          "detail": "coverage={'claim_ids': [], 'provenance': ['claim-release'], 'question': '发布稿记录了什么？', 'reason': 'dependent_claim_invalidated', 'status': 'blocked'}",
+          "name": "dependent_coverage_blocked",
+          "passed": true
+        },
+        {
+          "detail": "claims=['claim-author', 'claim-wang']",
+          "name": "unrelated_branch_preserved",
+          "passed": true
+        },
+        {
+          "detail": "revoked link exported as rejected state",
+          "name": "new_revision_current_rejected_state",
+          "passed": true
+        },
+        {
+          "detail": "no GateError",
+          "name": "recomputed_revision_gate_valid",
+          "passed": true
+        }
+      ],
+      "observed_facts": [
+        "撤销来源身份后其断言失效",
+        "事件、行为假设与已回答覆盖随之失效",
+        "不依赖被撤销来源的旁支完整保留"
+      ],
+      "title": "叶子身份撤销沿 claim→event→hypothesis→coverage 级联失效，旁支保留",
+      "trace": [
+        {
+          "claims": [
+            "claim-author",
+            "claim-cross",
+            "claim-mixed",
+            "claim-release",
+            "claim-wang"
+          ],
+          "revision": 1,
+          "step": "before"
+        },
+        {
+          "action": "revoke identity link person-lz/s-news",
+          "state": "rejected",
+          "step": "op"
+        },
+        {
+          "claims": [
+            "claim-author",
+            "claim-wang"
+          ],
+          "revision": 2,
+          "step": "after"
+        }
+      ]
+    },
+    {
+      "case_id": "cross-source-identity-basis-revocation",
+      "checks": [
+        {
+          "detail": "before=(True, None)",
+          "name": "cross_basis_was_eligible",
+          "passed": true
+        },
+        {
+          "detail": "after=(False, 'unanchored')",
+          "name": "cross_basis_invalidated_by_dependency",
+          "passed": true
+        },
+        {
+          "detail": "claims=['claim-author', 'claim-wang']",
+          "name": "cross_dependent_claim_invalidated",
+          "passed": true
+        },
+        {
+          "detail": "claims=['claim-author', 'claim-wang']",
+          "name": "public_branch_preserved",
+          "passed": true
+        }
+      ],
+      "observed_facts": [
+        "跨来源身份依据撤销会传播到依赖链接",
+        "依赖失效链接的断言从当前导出移除",
+        "独立锚点分支保留"
+      ],
+      "title": "跨来源身份依据被撤销后，依赖它的身份链接失效",
+      "trace": [
+        {
+          "eligibility": [
+            true,
+            null
+          ],
+          "link": "person-lz/s-cross",
+          "step": "before"
+        },
+        {
+          "action": "revoke basis source person-lz/s-news",
+          "step": "op"
+        },
+        {
+          "eligibility": [
+            false,
+            "unanchored"
+          ],
+          "link": "person-lz/s-cross",
+          "step": "after"
+        }
+      ]
+    },
+    {
+      "case_id": "mixed-basis-requires-cross-dependency",
+      "checks": [
+        {
+          "detail": "before=(True, None)",
+          "name": "mixed_basis_eligible_before",
+          "passed": true
+        },
+        {
+          "detail": "after=(False, 'unanchored')",
+          "name": "mixed_basis_cross_dependency_required",
+          "passed": true
+        },
+        {
+          "detail": "['claim-author', 'claim-wang']",
+          "name": "mixed_basis_dependent_claim_invalidated",
+          "passed": true
+        },
+        {
+          "detail": "['claim-author', 'claim-wang']",
+          "name": "mixed_basis_unrelated_branch_preserved",
+          "passed": true
+        }
+      ],
+      "observed_facts": [
+        "混合自述+跨来源依据仍要求所有声明的跨来源依赖合格",
+        "跨来源依赖失效时依赖链接与断言一并失效"
+      ],
+      "title": "自述依据不能免除必需的跨来源身份依赖",
+      "trace": [
+        {
+          "eligibility": [
+            true,
+            null
+          ],
+          "link": "person-lz/s-cross basis=[ev-news-ref, ev-cross]",
+          "step": "before"
+        },
+        {
+          "action": "revoke basis source s-news",
+          "step": "op"
+        },
+        {
+          "eligibility": [
+            false,
+            "unanchored"
+          ],
+          "link": "person-lz/s-cross",
+          "step": "after"
+        }
+      ]
+    },
+    {
+      "case_id": "identity-cycle-rejection",
+      "checks": [
+        {
+          "detail": "observed identity_cycle",
+          "name": "unanchored_cycle_rejected",
+          "passed": true
+        },
+        {
+          "detail": "eligibility={('person-lz', 's-cycle-x'): (False, 'unanchored'), ('person-lz', 's-cycle-y'): (False, 'unanchored')}",
+          "name": "cycle_links_ineligible",
+          "passed": true
+        },
+        {
+          "detail": "observed identity_cycle",
+          "name": "mixed_basis_cycle_rejected",
+          "passed": true
+        },
+        {
+          "detail": "pure self-source seed resolves Y",
+          "name": "independent_anchor_chain_accepted",
+          "passed": true
+        },
+        {
+          "detail": "eligibility={('person-lz', 's-cycle-x'): (True, None), ('person-lz', 's-cycle-y'): (True, None)}",
+          "name": "anchor_chain_eligible",
+          "passed": true
+        }
+      ],
+      "observed_facts": [
+        "无独立种子的跨来源身份循环被拒绝",
+        "自述摘录不能免除必需的跨来源依赖",
+        "纯自述锚点是无前提的种子，可解析依赖它的链接"
+      ],
+      "title": "无独立种子的跨来源身份循环被拒绝；纯自述锚点可解析依赖",
+      "trace": [
+        {
+          "action": "X basis<-Y, Y basis<-X",
+          "result": "identity_cycle",
+          "step": "gate"
+        },
+        {
+          "action": "X self excerpt + required cross Y",
+          "result": "identity_cycle",
+          "step": "gate"
+        },
+        {
+          "action": "X pure self anchor, Y cross<-X",
+          "result": "accepted",
+          "step": "gate"
+        }
+      ]
+    },
+    {
+      "case_id": "superseded-revision-after-reopen",
+      "checks": [
+        {
+          "detail": "superseded_by=2",
+          "name": "superseded_read_rejected_after_reopen",
+          "passed": true
+        },
+        {
+          "detail": "revision=2",
+          "name": "current_is_revision_2",
+          "passed": true
+        },
+        {
+          "detail": "[{\"code\": \"revision_superseded\", \"run_id\": \"run-probe-001\", \"revision\": 1, \"superseded_by\": 2}]",
+          "name": "superseded_export_explicit_error",
+          "passed": true
+        },
+        {
+          "detail": "duplicate_id",
+          "name": "malformed_revision_rejected",
+          "passed": true
+        },
+        {
+          "detail": "current revision unchanged after malformed write",
+          "name": "malformed_did_not_supersede",
+          "passed": true
+        },
+        {
+          "detail": "snapshot payload is immutable",
+          "name": "payload_immutable",
+          "passed": true
+        },
+        {
+          "detail": "[(1, 'superseded'), (2, 'current')]",
+          "name": "statuses_recorded",
+          "passed": true
+        }
+      ],
+      "observed_facts": [
+        "SQLite 保存不可变快照及 current/superseded 状态",
+        "重连后仍明确区分旧修订",
+        "畸形修订在事务前失败，不改变有效报告",
+        "payload 不可被 UPDATE 修改"
+      ],
+      "title": "重连后旧修订返回 revision_superseded；畸形修订不能取代有效报告",
+      "trace": [
+        {
+          "revision": 1,
+          "status": "current",
+          "step": "write"
+        },
+        {
+          "revision": 2,
+          "revision_1": "superseded",
+          "status": "current",
+          "step": "write"
+        },
+        {
+          "action": "read revision 1",
+          "result": "revision_superseded(superseded_by=2)",
+          "step": "reopen"
+        },
+        {
+          "action": "duplicate id",
+          "result": "rejected, revision 2 remains current",
+          "revision": 3,
+          "step": "write"
+        }
+      ]
+    },
+    {
+      "case_id": "public-private-mixed-support",
+      "checks": [
+        {
+          "detail": "claims=['claim-author', 'claim-cross', 'claim-release']",
+          "name": "mixed_support_claim_excluded",
+          "passed": true
+        },
+        {
+          "detail": "sources=['s-cross', 's-news', 's-profile-a']",
+          "name": "private_source_omitted",
+          "passed": true
+        },
+        {
+          "detail": "evidence=['ev-cross', 'ev-news-ref', 'ev-profile', 'ev-release']",
+          "name": "private_evidence_omitted",
+          "passed": true
+        },
+        {
+          "detail": "['person-lz']",
+          "name": "private_only_person_omitted",
+          "passed": true
+        },
+        {
+          "detail": "['u-release']",
+          "name": "private_unknown_omitted",
+          "passed": true
+        },
+        {
+          "detail": "['u-release']",
+          "name": "public_unknown_preserved",
+          "passed": true
+        },
+        {
+          "detail": "leaked=[]",
+          "name": "private_labels_not_leaked",
+          "passed": true
+        },
+        {
+          "detail": "public canonical URLs survive the filter",
+          "name": "canonical_urls_preserved",
+          "passed": true
+        },
+        {
+          "detail": "clean",
+          "name": "no_private_patterns",
+          "passed": true
+        }
+      ],
+      "observed_facts": [
+        "含私有支持的断言被整体排除而非声称独立支持",
+        "仅私有身份的人物与档案从公共导出消失",
+        "受限覆盖与未验证未知不泄露隐藏材料存在"
+      ],
+      "title": "混合公私支持被保守排除；私有来源、人物与档案元数据不进入公共导出",
+      "trace": [
+        {
+          "claims": [
+            "claim-mixed",
+            "claim-wang",
+            "claim-release"
+          ],
+          "step": "before"
+        },
+        {
+          "action": "build_public_view",
+          "step": "filter"
+        },
+        {
+          "claims": [
+            "claim-author",
+            "claim-cross",
+            "claim-release"
+          ],
+          "sources": [
+            "s-cross",
+            "s-news",
+            "s-profile-a"
+          ],
+          "step": "after"
+        }
+      ]
+    },
+    {
+      "case_id": "public-permission-fixed-point",
+      "checks": [
+        {
+          "detail": "before=['claim-author', 'claim-cross', 'claim-hop', 'claim-release']",
+          "name": "chain_public_before_closure",
+          "passed": true
+        },
+        {
+          "detail": "['claim-author']",
+          "name": "direct_private_dependency_excluded",
+          "passed": true
+        },
+        {
+          "detail": "['claim-author']",
+          "name": "two_hop_dependency_excluded",
+          "passed": true
+        },
+        {
+          "detail": "['claim-author']",
+          "name": "three_hop_dependency_excluded",
+          "passed": true
+        },
+        {
+          "detail": "['claim-author']",
+          "name": "public_branch_preserved",
+          "passed": true
+        },
+        {
+          "detail": "links=['s-profile-a']",
+          "name": "restricted_links_absent",
+          "passed": true
+        },
+        {
+          "detail": "dangling=[]",
+          "name": "no_dangling_public_pointers",
+          "passed": true
+        }
+      ],
+      "observed_facts": [
+        "公共源经受限中间来源得到的身份支持不再合格",
+        "二跳与三跳受限依赖的断言都不进入公共导出",
+        "公共导出没有悬空身份/证据指针"
+      ],
+      "title": "公共身份资格在仅公共子图上重算到不动点，多跳受限依赖不泄漏",
+      "trace": [
+        {
+          "action": "s-news public",
+          "public_claims": [
+            "claim-author",
+            "claim-cross",
+            "claim-hop",
+            "claim-release"
+          ],
+          "step": "before"
+        },
+        {
+          "action": "s-news export_policy=private_local",
+          "step": "op"
+        },
+        {
+          "link_sources": [
+            "s-profile-a"
+          ],
+          "public_claims": [
+            "claim-author"
+          ],
+          "step": "after"
+        }
+      ]
+    },
+    {
+      "case_id": "public-provenance-controls",
+      "checks": [
+        {
+          "detail": "leaked=[]",
+          "name": "missing_and_mixed_provenance_omitted",
+          "passed": true
+        },
+        {
+          "detail": "internal view keeps unprovenanced nodes for audit",
+          "name": "negative_controls_present_internally",
+          "passed": true
+        },
+        {
+          "detail": "",
+          "name": "public_event_context_positive",
+          "passed": true
+        },
+        {
+          "detail": "",
+          "name": "public_event_unknown_positive",
+          "passed": true
+        },
+        {
+          "detail": "",
+          "name": "public_falsifier_positive",
+          "passed": true
+        },
+        {
+          "detail": "",
+          "name": "public_partial_hypothesis_positive",
+          "passed": true
+        },
+        {
+          "detail": "",
+          "name": "public_alternative_positive",
+          "passed": true
+        },
+        {
+          "detail": "",
+          "name": "public_coverage_positive",
+          "passed": true
+        },
+        {
+          "detail": "",
+          "name": "public_unknown_positive",
+          "passed": true
+        },
+        {
+          "detail": "person omitted when display-name provenance is missing",
+          "name": "missing_display_name_provenance_omits_person",
+          "passed": true
+        }
+      ],
+      "observed_facts": [
+        "缺少或混合来源的文本字段在公共导出被省略",
+        "显式全公共来源的上下文、未知、覆盖与假设文本保留",
+        "声明来源是作者输入而非语义真值（本探针只检查可达权限）"
+      ],
+      "title": "文本字段需要显式全公共来源；缺失或受限来源的文本一律省略",
+      "trace": [
+        {
+          "action": "build public/internal from provenance fixture",
+          "step": "before"
+        },
+        {
+          "negatives_leaked": [],
+          "step": "after"
+        }
+      ]
+    },
+    {
+      "case_id": "claim-status-requirements",
+      "checks": [
+        {
+          "detail": "observed claim_missing_support",
+          "name": "supported_without_support_rejected",
+          "passed": true
+        },
+        {
+          "detail": "no upgrade",
+          "name": "insufficient_evidence_allowed",
+          "passed": true
+        },
+        {
+          "detail": "observed invalid_claim_kind",
+          "name": "invalid_claim_kind_rejected",
+          "passed": true
+        },
+        {
+          "detail": "observed invalid_claim_status",
+          "name": "invalid_claim_status_rejected",
+          "passed": true
+        },
+        {
+          "detail": "observed invalid_revision",
+          "name": "invalid_revision_rejected",
+          "passed": true
+        },
+        {
+          "detail": "observed invalid_link_state",
+          "name": "invalid_link_state_rejected",
+          "passed": true
+        },
+        {
+          "detail": "observed invalid_coverage_status",
+          "name": "invalid_coverage_status_rejected",
+          "passed": true
+        }
+      ],
+      "observed_facts": [
+        "supported 断言不能没有支持证据",
+        "insufficient_evidence 无证据被允许且不被升级",
+        "claim kind/status、链接状态、coverage 状态与 revision 使用封闭枚举"
+      ],
+      "title": "已知 claim 状态必须有声明的依赖；枚举与修订号失败关闭",
+      "trace": [
+        {
+          "action": "inject invalid claim/state variants",
+          "result": "rejected",
+          "step": "gate"
+        }
+      ]
+    },
+    {
+      "case_id": "export-enum-validation",
+      "checks": [
+        {
+          "detail": "{\"ok\": false, \"errors\": [{\"code\": \"invalid_audience\", \"audience\": \"publci\"}]}",
+          "name": "unknown_audience_rejected",
+          "passed": true
+        },
+        {
+          "detail": "{\"ok\": false, \"errors\": [{\"code\": \"invalid_format\", \"format\": \"markdwn\"}]}",
+          "name": "unknown_format_rejected",
+          "passed": true
+        },
+        {
+          "detail": "",
+          "name": "public_export_ok",
+          "passed": true
+        },
+        {
+          "detail": "explicit internal audience sees internal nodes",
+          "name": "internal_not_redefined",
+          "passed": true
+        }
+      ],
+      "observed_facts": [
+        "audience 与 format 使用封闭枚举",
+        "拼写错误返回明确错误而非静默降级"
+      ],
+      "title": "未知 audience/format 在数据访问前失败关闭，不被静默当成 internal/Markdown",
+      "trace": [
+        {
+          "action": "audience=publci, fmt=markdwn",
+          "result": "invalid_audience/invalid_format",
+          "step": "export"
+        }
+      ]
+    },
+    {
+      "case_id": "source-withdrawal-transition",
+      "checks": [
+        {
+          "detail": "revision=2 supersedes=1",
+          "name": "withdrawal_creates_new_revision",
+          "passed": true
+        },
+        {
+          "detail": "superseded_by=2",
+          "name": "old_revision_rejected_after_withdraw",
+          "passed": true
+        },
+        {
+          "detail": "[{\"code\": \"revision_superseded\", \"run_id\": \"run-probe-001\", \"revision\": 1, \"superseded_by\": 2}]",
+          "name": "old_export_rejected_after_withdraw",
+          "passed": true
+        },
+        {
+          "detail": "withdrawn source/evidence keep inert audit records without usable body/excerpt",
+          "name": "withdrawn_audit_record_preserved",
+          "passed": true
+        },
+        {
+          "detail": "internal view must not emit withdrawn excerpts",
+          "name": "withdrawn_excerpt_absent_internal",
+          "passed": true
+        },
+        {
+          "detail": "public view must not emit withdrawn excerpts",
+          "name": "withdrawn_excerpt_absent_public",
+          "passed": true
+        },
+        {
+          "detail": "dependent conclusions excluded from public export",
+          "name": "withdrawn_conclusions_absent_public",
+          "passed": true
+        },
+        {
+          "detail": "withdrawn public source metadata omitted",
+          "name": "withdrawn_source_absent_public",
+          "passed": true
+        },
+        {
+          "detail": "unaffected branch preserved after withdrawal",
+          "name": "unaffected_public_branch_preserved",
+          "passed": true
+        },
+        {
+          "detail": "internal renderer marks withdrawal instead of printing content",
+          "name": "internal_marks_withdrawn_without_content",
+          "passed": true
+        }
+      ],
+      "observed_facts": [
+        "撤回本地可用正文会失效依赖链接并级联到断言、事件、假设与覆盖",
+        "旧修订在新修订写入后被取代，重连后仍拒绝旧导出",
+        "不可读正文与摘录不再出现在内部或公共视图",
+        "无关的公共分支完整保留",
+        "这是逻辑撤回，不是物理安全删除"
+      ],
+      "title": "合法来源撤回：移除可用正文/摘录、级联失效、取代旧导出、保留旁支",
+      "trace": [
+        {
+          "revision": 1,
+          "s-news": "body retained",
+          "step": "before"
+        },
+        {
+          "action": "apply_source_withdrawal(s-news)",
+          "step": "op"
+        },
+        {
+          "revision": 2,
+          "s-news": "withdrawn, body=None",
+          "step": "after"
+        },
+        {
+          "action": "export revision 1",
+          "result": "revision_superseded",
+          "step": "reopen"
+        }
+      ]
+    },
+    {
+      "case_id": "live-inaccessible-retains-snapshot",
+      "checks": [
+        {
+          "detail": "saved body remains usable",
+          "name": "live_inaccessible_gate_accepts",
+          "passed": true
+        },
+        {
+          "detail": "retained body still supports the dependent claim",
+          "name": "live_inaccessible_keeps_claim",
+          "passed": true
+        },
+        {
+          "detail": "observed source_inaccessible",
+          "name": "missing_body_without_withdrawal_rejected",
+          "passed": true
+        }
+      ],
+      "observed_facts": [
+        "live fetch_status 只是描述，不决定历史快照可用性",
+        "只有显式撤回才移除可用正文并级联失效",
+        "丢失正文但不声明撤回的输入被视为畸形而拒绝"
+      ],
+      "title": "实时不可读不使已保存快照失效；未撤回而丢失正文则被拒绝",
+      "trace": [
+        {
+          "action": "s-news fetch_status=inaccessible, body retained",
+          "result": "accepted",
+          "step": "gate"
+        },
+        {
+          "action": "s-news body=None without withdrawal",
+          "result": "source_inaccessible",
+          "step": "gate"
+        }
+      ]
+    },
+    {
+      "case_id": "withdrawal-inert-validation",
+      "checks": [
+        {
+          "detail": "observed withdrawn_source_active_evidence",
+          "name": "active_evidence_on_withdrawn_source_rejected",
+          "passed": true
+        },
+        {
+          "detail": "observed withdrawn_evidence_without_withdrawn_source",
+          "name": "inert_evidence_without_withdrawn_source_rejected",
+          "passed": true
+        },
+        {
+          "detail": "observed withdrawn_evidence_has_excerpt",
+          "name": "withdrawn_evidence_with_excerpt_rejected",
+          "passed": true
+        },
+        {
+          "detail": "observed claim_references_withdrawn_evidence",
+          "name": "active_claim_on_inert_evidence_rejected",
+          "passed": true
+        }
+      ],
+      "observed_facts": [
+        "撤回来源不能保留活动证据",
+        "惰性证据必须属于已撤回来源、不得保留摘录",
+        "活动断言不能引用惰性证据，不能靠标记绕过验证"
+      ],
+      "title": "惰性证据必须绑定撤回来源且不能带摘录或被活动结论引用",
+      "trace": [
+        {
+          "action": "inject inconsistent withdrawal variants",
+          "result": "rejected",
+          "step": "gate"
+        }
+      ]
+    },
+    {
+      "case_id": "private-coverage-invalidation",
+      "checks": [
+        {
+          "detail": "private-only coverage question must not survive its claim invalidation",
+          "name": "private_coverage_question_absent",
+          "passed": true
+        },
+        {
+          "detail": "{'person-lz'}",
+          "name": "private_person_absent",
+          "passed": true
+        },
+        {
+          "detail": "{'claim-author', 'claim-release', 'claim-cross'}",
+          "name": "private_claim_absent",
+          "passed": true
+        },
+        {
+          "detail": "{'claim-author', 'claim-release', 'claim-cross'}",
+          "name": "unaffected_branch_preserved",
+          "passed": true
+        }
+      ],
+      "observed_facts": [
+        "失效覆盖保留来源依赖，因此受限问题文本被省略",
+        "仅私有身份的人物、断言与覆盖不进入公共导出",
+        "无关公共分支保留"
+      ],
+      "title": "仅私有身份被撤销后，其覆盖问题文本不随 claim_ids 清空而泄漏",
+      "trace": [
+        {
+          "coverage": [
+            "王五的私有项目是什么？"
+          ],
+          "step": "before"
+        },
+        {
+          "action": "apply_identity_revocation(person-wang, s-private-person)",
+          "step": "op"
+        },
+        {
+          "public_questions": [
+            "公开主页是否把林舟列为作者？",
+            "发布稿记录了什么？",
+            "能否判断长期维护能力？",
+            "转载说明了什么？"
+          ],
+          "step": "after"
+        }
+      ]
+    },
+    {
+      "case_id": "renderer-parity",
+      "checks": [
+        {
+          "detail": "missing=[]",
+          "name": "internal_claim_ids_shared",
+          "passed": true
+        },
+        {
+          "detail": "[]",
+          "name": "internal_statuses_shared",
+          "passed": true
+        },
+        {
+          "detail": "[]",
+          "name": "internal_anchors_shared",
+          "passed": true
+        },
+        {
+          "detail": "[]",
+          "name": "internal_urls_shared",
+          "passed": true
+        },
+        {
+          "detail": "revision/as_of present in Markdown",
+          "name": "internal_metadata_shared",
+          "passed": true
+        },
+        {
+          "detail": "missing=[]",
+          "name": "public_claim_ids_shared",
+          "passed": true
+        },
+        {
+          "detail": "[]",
+          "name": "public_statuses_shared",
+          "passed": true
+        },
+        {
+          "detail": "[]",
+          "name": "public_anchors_shared",
+          "passed": true
+        },
+        {
+          "detail": "[]",
+          "name": "public_urls_shared",
+          "passed": true
+        },
+        {
+          "detail": "revision/as_of present in Markdown",
+          "name": "public_metadata_shared",
+          "passed": true
+        },
+        {
+          "detail": "",
+          "name": "html_escaped",
+          "passed": true
+        },
+        {
+          "detail": "",
+          "name": "img_escaped",
+          "passed": true
+        },
+        {
+          "detail": "",
+          "name": "unsafe_url_not_linked",
+          "passed": true
+        },
+        {
+          "detail": "",
+          "name": "safe_url_paren_encoded",
+          "passed": true
+        },
+        {
+          "detail": "render did not mutate stored snapshot",
+          "name": "rendering_is_pure",
+          "passed": true
+        }
+      ],
+      "observed_facts": [
+        "两种格式的 claim/evidence ID、状态、as_of、revision、人物锚点与 canonical URL 一致",
+        "HTML 与不安全链接被转义，渲染不修改状态、不调用 provider"
+      ],
+      "title": "JSON 与 Markdown 共享同一过滤快照，渲染纯净且转义不安全内容",
+      "trace": [
+        {
+          "snapshot_revision": 1,
+          "step": "before"
+        },
+        {
+          "action": "json + markdown from same view",
+          "step": "render"
+        },
+        {
+          "snapshot_unchanged": true,
+          "step": "after"
+        }
+      ]
+    },
+    {
+      "case_id": "renderer-material-fields",
+      "checks": [
+        {
+          "detail": "",
+          "name": "contested_claim_present",
+          "passed": true
+        },
+        {
+          "detail": "",
+          "name": "support_and_refute_labels",
+          "passed": true
+        },
+        {
+          "detail": "[]",
+          "name": "claim_refs_rendered",
+          "passed": true
+        },
+        {
+          "detail": "[]",
+          "name": "claim_validity_rendered",
+          "passed": true
+        },
+        {
+          "detail": "[]",
+          "name": "event_outcomes_and_unknowns_rendered",
+          "passed": true
+        },
+        {
+          "detail": "[]",
+          "name": "hypothesis_fields_rendered",
+          "passed": true
+        },
+        {
+          "detail": "",
+          "name": "counter_label_rendered",
+          "passed": true
+        },
+        {
+          "detail": "",
+          "name": "alternatives_label_rendered",
+          "passed": true
+        },
+        {
+          "detail": "",
+          "name": "falsifier_label_rendered",
+          "passed": true
+        },
+        {
+          "detail": "",
+          "name": "outcome_label_rendered",
+          "passed": true
+        }
+      ],
+      "observed_facts": [
+        "Markdown 与 JSON 对每个节点暴露相同的支持/反证与不确定性字段",
+        "支持与反证、支持事件与反事件使用不同标签"
+      ],
+      "title": "断言反证/有效期、事件结果与未知、假设反事件/替代解释/否证条件都进入 Markdown",
+      "trace": [
+        {
+          "action": "counterevidence snapshot -> public json + markdown",
+          "step": "render"
+        }
+      ]
+    }
+  ],
+  "distinctions": {
+    "ai_hypothesis": "门禁设计可能迁移到真实采集管线；本探针只研究合成标注上的依赖失效行为，不测抽取、语义蕴含、检索质量、真实精度或用户收益。",
+    "automated_verdict": "全部门禁与声明检查通过时为 supported，否则 rejected。",
+    "human_choice": "unreviewed",
+    "observed_facts": [
+      "有效合成快照通过结构与资格门禁",
+      "内部导出保留公共与私有分支；公共导出保留未受影响的公共分支",
+      "自述来源摘录被当作锚点，不需要额外身份依赖",
+      "姓名相同不会产生身份链接（没有名称推断）",
+      "使用未绑定来源的断言被门禁拒绝",
+      "只有 linked 状态可用于支持断言",
+      "rejected / candidate / disputed 链接保持不合格",
+      "fetch_status=inaccessible 的来源不能被引用",
+      "null body 不能产生摘录",
+      "摘录必须是合成来源正文的精确子串",
+      "所有外键（含人物/档案身份证据、事件与假设边）都必须存在",
+      "ID 必须唯一",
+      "未知 export_policy 失败关闭",
+      "event 不得引用他人 claim（人物对应关系）",
+      "撤销来源身份后其断言失效",
+      "事件、行为假设与已回答覆盖随之失效",
+      "不依赖被撤销来源的旁支完整保留",
+      "跨来源身份依据撤销会传播到依赖链接",
+      "依赖失效链接的断言从当前导出移除",
+      "独立锚点分支保留",
+      "混合自述+跨来源依据仍要求所有声明的跨来源依赖合格",
+      "跨来源依赖失效时依赖链接与断言一并失效",
+      "无独立种子的跨来源身份循环被拒绝",
+      "自述摘录不能免除必需的跨来源依赖",
+      "纯自述锚点是无前提的种子，可解析依赖它的链接",
+      "SQLite 保存不可变快照及 current/superseded 状态",
+      "重连后仍明确区分旧修订",
+      "畸形修订在事务前失败，不改变有效报告",
+      "payload 不可被 UPDATE 修改",
+      "含私有支持的断言被整体排除而非声称独立支持",
+      "仅私有身份的人物与档案从公共导出消失",
+      "受限覆盖与未验证未知不泄露隐藏材料存在",
+      "公共源经受限中间来源得到的身份支持不再合格",
+      "二跳与三跳受限依赖的断言都不进入公共导出",
+      "公共导出没有悬空身份/证据指针",
+      "缺少或混合来源的文本字段在公共导出被省略",
+      "显式全公共来源的上下文、未知、覆盖与假设文本保留",
+      "声明来源是作者输入而非语义真值（本探针只检查可达权限）",
+      "supported 断言不能没有支持证据",
+      "insufficient_evidence 无证据被允许且不被升级",
+      "claim kind/status、链接状态、coverage 状态与 revision 使用封闭枚举",
+      "audience 与 format 使用封闭枚举",
+      "拼写错误返回明确错误而非静默降级",
+      "撤回本地可用正文会失效依赖链接并级联到断言、事件、假设与覆盖",
+      "旧修订在新修订写入后被取代，重连后仍拒绝旧导出",
+      "不可读正文与摘录不再出现在内部或公共视图",
+      "无关的公共分支完整保留",
+      "这是逻辑撤回，不是物理安全删除",
+      "live fetch_status 只是描述，不决定历史快照可用性",
+      "只有显式撤回才移除可用正文并级联失效",
+      "丢失正文但不声明撤回的输入被视为畸形而拒绝",
+      "撤回来源不能保留活动证据",
+      "惰性证据必须属于已撤回来源、不得保留摘录",
+      "活动断言不能引用惰性证据，不能靠标记绕过验证",
+      "失效覆盖保留来源依赖，因此受限问题文本被省略",
+      "仅私有身份的人物、断言与覆盖不进入公共导出",
+      "无关公共分支保留",
+      "两种格式的 claim/evidence ID、状态、as_of、revision、人物锚点与 canonical URL 一致",
+      "HTML 与不安全链接被转义，渲染不修改状态、不调用 provider",
+      "Markdown 与 JSON 对每个节点暴露相同的支持/反证与不确定性字段",
+      "支持与反证、支持事件与反事件使用不同标签"
+    ],
+    "remaining_uncertainty": [
+      "文本字段的来源是作者声明的标注，不是语义真值；探针只检查被引用节点的可达权限。",
+      "只覆盖作者构造的合成依赖形状，不代表真实报告的依赖图分布。",
+      "进程内网络守卫不是沙箱，无法证明子进程或非 Python 工具未联网。",
+      "自动判定未经过人工评审，结论保持 unreviewed。"
+    ]
+  },
+  "generated_by": "authored_probe_runner_not_agent_run",
+  "human_choice": "unreviewed",
+  "network": {
+    "attempts": [],
+    "guard": "in-process Python monkeypatch (stdlib socket/urllib)",
+    "honest_limit": "只在当前解释器内拦截到达 stdlib socket 属性的调用；不是 OS 沙箱，不阻止子进程、C 扩展或守卫前缓存的引用。",
+    "requests_attempted": 0
+  },
+  "official_references": {
+    "sqlite3": "https://docs.python.org/3.12/library/sqlite3.html",
+    "unittest": "https://docs.python.org/3.12/library/unittest.html"
+  },
+  "probe": "evidence_gate",
+  "provenance": {
+    "review_status": "unreviewed",
+    "source": "synthetic",
+    "split": "discovery"
+  },
+  "renderer_parity_sample": {
+    "as_of": "2026-09-20",
+    "claim_ids": [
+      "claim-author",
+      "claim-release",
+      "claim-cross"
+    ],
+    "evidence_ids": [
+      "ev-profile",
+      "ev-release",
+      "ev-news-ref",
+      "ev-cross"
+    ],
+    "json": "{\n  \"as_of\": \"2026-09-20\",\n  \"audience\": \"public\",\n  \"behavior_hypotheses\": [\n    {\n      \"alternatives\": [],\n      \"counter_event_ids\": [],\n      \"falsifier\": \"主页被证明属于他人。\",\n      \"hypothesis_id\": \"hyp-author\",\n      \"person_id\": \"person-lz\",\n      \"statement\": \"假设：林舟以软件作者身份公开活动。\",\n      \"status\": \"hypothesis\",\n      \"support_event_ids\": [\n        \"event-author\"\n      ]\n    },\n    {\n      \"alternatives\": [],\n      \"counter_event_ids\": [],\n      \"falsifier\": \"发布稿作者另有其人。\",\n      \"hypothesis_id\": \"hyp-release\",\n      \"person_id\": \"person-lz\",\n      \"statement\": \"假设：Lantern 2.0 由林舟主导发布。\",\n      \"status\": \"hypothesis\",\n      \"support_event_ids\": [\n        \"event-release\"\n      ]\n    },\n    {\n      \"alternatives\": [],\n      \"counter_event_ids\": [],\n      \"falsifier\": \"转载无原始来源。\",\n      \"hypothesis_id\": \"hyp-cross\",\n      \"person_id\": \"person-lz\",\n      \"statement\": \"假设：转载内容源自一次真实会议展示。\",\n      \"status\": \"hypothesis\",\n      \"support_event_ids\": [\n        \"event-cross\"\n      ]\n    }\n  ],\n  \"claims\": [\n    {\n      \"as_of\": \"2026-09-20\",\n      \"claim_id\": \"claim-author\",\n      \"kind\": \"attributed_statement\",\n      \"person_id\": \"person-lz\",\n      \"refute_evidence_ids\": [],\n      \"statement\": \"公开主页把林舟列为软件作者。\",\n      \"status\": \"supported\",\n      \"support_evidence_ids\": [\n        \"ev-profile\"\n      ],\n      \"valid_from\": null,\n      \"valid_to\": null\n    },\n    {\n      \"as_of\": \"2026-09-20\",\n      \"claim_id\": \"claim-release\",\n      \"kind\": \"attributed_statement\",\n      \"person_id\": \"person-lz\",\n      \"refute_evidence_ids\": [],\n      \"statement\": \"发布稿记录林舟发布 Lantern 2.0。\",\n      \"status\": \"supported\",\n      \"support_evidence_ids\": [\n        \"ev-release\"\n      ],\n      \"valid_from\": \"2026-09-01\",\n      \"valid_to\": null\n    },\n    {\n      \"as_of\": \"2026-09-20\",\n      \"claim_id\": \"claim-cross\",\n      \"kind\": \"attributed_statement\",\n      \"person_id\": \"person-lz\",\n      \"refute_evidence_ids\": [],\n      \"statement\": \"转载称林舟在会议展示了 Lantern。\",\n      \"status\": \"supported\",\n      \"support_evidence_ids\": [\n        \"ev-cross\"\n      ],\n      \"valid_from\": null,\n      \"valid_to\": null\n    }\n  ],\n  \"coverage\": [\n    {\n      \"claim_ids\": [\n        \"claim-author\"\n      ],\n      \"question\": \"公开主页是否把林舟列为作者？\",\n      \"status\": \"answered\"\n    },\n    {\n      \"claim_ids\": [\n        \"claim-release\"\n      ],\n      \"question\": \"发布稿记录了什么？\",\n      \"status\": \"answered\"\n    },\n    {\n      \"claim_ids\": [\n        \"claim-cross\"\n      ],\n      \"question\": \"转载说明了什么？\",\n      \"status\": \"answered\"\n    },\n    {\n      \"question\": \"能否判断长期维护能力？\",\n      \"reason\": \"无后续记录。\",\n      \"status\": \"unknown\"\n    }\n  ],\n  \"events\": [\n    {\n      \"action_claim_ids\": [\n        \"claim-author\"\n      ],\n      \"context\": \"公开主页陈述。\",\n      \"event_id\": \"event-author\",\n      \"occurred_at\": null,\n      \"outcome_claim_ids\": [],\n      \"person_id\": \"person-lz\",\n      \"recorded_at\": \"2026-09-01\",\n      \"unknowns\": [\n        {\n          \"text\": \"作者长期活动的完整时间线未知。\"\n        }\n      ]\n    },\n    {\n      \"action_claim_ids\": [\n        \"claim-release\"\n      ],\n      \"context\": \"发布稿陈述。\",\n      \"event_id\": \"event-release\",\n      \"occurred_at\": null,\n      \"outcome_claim_ids\": [],\n      \"person_id\": \"person-lz\",\n      \"recorded_at\": \"2026-09-01\",\n      \"unknowns\": []\n    },\n    {\n      \"action_claim_ids\": [\n        \"claim-cross\"\n      ],\n      \"context\": \"转载陈述。\",\n      \"event_id\": \"event-cross\",\n      \"occurred_at\": null,\n      \"outcome_claim_ids\": [],\n      \"person_id\": \"person-lz\",\n      \"recorded_at\": \"2026-09-01\",\n      \"unknowns\": []\n    }\n  ],\n  \"evidence\": [\n    {\n      \"evidence_id\": \"ev-profile\",\n      \"excerpt\": \"LZ-7 是软件作者林舟的公开主页。\",\n      \"locator\": \"body:sentence:1\",\n      \"source_id\": \"s-profile-a\"\n    },\n    {\n      \"evidence_id\": \"ev-release\",\n      \"excerpt\": \"软件作者林舟发布 Lantern 2.0。\",\n      \"locator\": \"body:sentence:1\",\n      \"source_id\": \"s-news\"\n    },\n    {\n      \"evidence_id\": \"ev-news-ref\",\n      \"excerpt\": \"本文引用主页 https://example.org/people/lz7 。\",\n      \"locator\": \"body:sentence:2\",\n      \"source_id\": \"s-news\"\n    },\n    {\n      \"evidence_id\": \"ev-cross\",\n      \"excerpt\": \"林舟在会议展示了 Lantern。\",\n      \"locator\": \"body:sentence:1\",\n      \"source_id\": \"s-cross\"\n    }\n  ],\n  \"identity_links\": [\n    {\n      \"basis_evidence_ids\": [\n        \"ev-profile\"\n      ],\n      \"person_id\": \"person-lz\",\n      \"revision\": 1,\n      \"source_id\": \"s-profile-a\",\n      \"state\": \"linked\"\n    },\n    {\n      \"basis_evidence_ids\": [\n        \"ev-news-ref\"\n      ],\n      \"person_id\": \"person-lz\",\n      \"revision\": 1,\n      \"source_id\": \"s-news\",\n      \"state\": \"linked\"\n    },\n    {\n      \"basis_evidence_ids\": [\n        \"ev-news-ref\"\n      ],\n      \"person_id\": \"person-lz\",\n      \"revision\": 1,\n      \"source_id\": \"s-cross\",\n      \"state\": \"linked\"\n    }\n  ],\n  \"people_index\": [\n    {\n      \"display_name\": \"林舟（合成）\",\n      \"display_name_provenance\": [\n        \"ev-profile\"\n      ],\n      \"identity_evidence_ids\": [\n        \"ev-profile\"\n      ],\n      \"identity_status\": \"resolved\",\n      \"person_id\": \"person-lz\",\n      \"profile_links\": [\n        {\n          \"evidence_ids\": [\n            \"ev-profile\"\n          ],\n          \"url\": \"https://example.org/people/lz7\",\n          \"verification_status\": \"verified_in_fixture\"\n        }\n      ],\n      \"report_anchor\": \"person-lz\"\n    }\n  ],\n  \"revision\": 1,\n  \"run_id\": \"run-probe-001\",\n  \"schema_version\": \"stripsearch/evidence-gate-probe-v1\",\n  \"sources\": [\n    {\n      \"canonical_url\": \"https://example.org/s-profile-a\",\n      \"export_policy\": \"public_synthetic\",\n      \"fetch_status\": \"fixture\",\n      \"origin_group_id\": \"origin-s-profile-a\",\n      \"published_at\": \"2026-09-01\",\n      \"retrieved_at\": \"2026-09-20T00:00:00Z\",\n      \"snapshot_hash\": null,\n      \"source_id\": \"s-profile-a\",\n      \"title\": \"LZ-7 主页（合成）\"\n    },\n    {\n      \"canonical_url\": \"https://example.org/s-news\",\n      \"export_policy\": \"public_synthetic\",\n      \"fetch_status\": \"fixture\",\n      \"origin_group_id\": \"origin-s-news\",\n      \"published_at\": \"2026-09-01\",\n      \"retrieved_at\": \"2026-09-20T00:00:00Z\",\n      \"snapshot_hash\": null,\n      \"source_id\": \"s-news\",\n      \"title\": \"Lantern 发布稿（合成）\"\n    },\n    {\n      \"canonical_url\": \"https://example.org/s-cross\",\n      \"export_policy\": \"public_synthetic\",\n      \"fetch_status\": \"fixture\",\n      \"origin_group_id\": \"origin-s-cross\",\n      \"published_at\": \"2026-09-01\",\n      \"retrieved_at\": \"2026-09-20T00:00:00Z\",\n      \"snapshot_hash\": null,\n      \"source_id\": \"s-cross\",\n      \"title\": \"会议转载（合成）\"\n    }\n  ],\n  \"state\": \"completed\",\n  \"supersedes\": null,\n  \"synthetic\": true,\n  \"unknowns\": [\n    {\n      \"provenance\": [\n        \"claim-release\"\n      ],\n      \"text\": \"发布后的长期维护情况未确认。\",\n      \"unknown_id\": \"u-release\"\n    }\n  ]\n}",
+    "markdown": "# 证据门禁探针报告 · run-probe-001\n\n> 合成离线探针输出；audience=public；不调用网络、模型或 provider。\n\n`run-probe-001` · revision 1 · completed · 截至 2026-09-20\n\n## 结构元数据\n- revision: 1（supersedes: None）\n- as_of: 2026-09-20\n\n## 人物索引\n- [林舟（合成）](#person-lz) · `person-lz` · 身份 resolved · [https://example.org/people/lz7](https://example.org/people/lz7)\n<a id=\"person-lz\"></a>\n\n## 断言\n| claim_id | 人物 | 断言 | kind / status | support | refute | valid | as_of |\n|---|---|---|---|---|---|---|---|\n| `claim-author` | `person-lz` | 公开主页把林舟列为软件作者。 | attributed_statement / supported | ev-profile |  | -..- | 2026-09-20 |\n| `claim-release` | `person-lz` | 发布稿记录林舟发布 Lantern 2.0。 | attributed_statement / supported | ev-release |  | 2026-09-01..- | 2026-09-20 |\n| `claim-cross` | `person-lz` | 转载称林舟在会议展示了 Lantern。 | attributed_statement / supported | ev-cross |  | -..- | 2026-09-20 |\n\n## 事件\n- `event-author` · `person-lz` · recorded=2026-09-01 · occurred= · action=claim-author · outcome= · context=公开主页陈述。\n  - 事件未知：作者长期活动的完整时间线未知。\n- `event-release` · `person-lz` · recorded=2026-09-01 · occurred= · action=claim-release · outcome= · context=发布稿陈述。\n- `event-cross` · `person-lz` · recorded=2026-09-01 · occurred= · action=claim-cross · outcome= · context=转载陈述。\n\n## 行为假设\n- `hyp-author` · 假设：林舟以软件作者身份公开活动。 · support=event-author · counter= · status=hypothesis · falsifier=主页被证明属于他人。\n- `hyp-release` · 假设：Lantern 2.0 由林舟主导发布。 · support=event-release · counter= · status=hypothesis · falsifier=发布稿作者另有其人。\n- `hyp-cross` · 假设：转载内容源自一次真实会议展示。 · support=event-cross · counter= · status=hypothesis · falsifier=转载无原始来源。\n\n## 未知与覆盖\n- 公开主页是否把林舟列为作者？：answered claims=claim-author\n- 发布稿记录了什么？：answered claims=claim-release\n- 转载说明了什么？：answered claims=claim-cross\n- 能否判断长期维护能力？：unknown（无后续记录。）\n- 发布后的长期维护情况未确认。\n\n## 来源\n| source_id | 标题 | canonical URL | policy |\n|---|---|---|---|\n| `s-profile-a` | LZ-7 主页（合成） | [https://example.org/s-profile-a](https://example.org/s-profile-a) | public_synthetic |\n| `s-news` | Lantern 发布稿（合成） | [https://example.org/s-news](https://example.org/s-news) | public_synthetic |\n| `s-cross` | 会议转载（合成） | [https://example.org/s-cross](https://example.org/s-cross) | public_synthetic |\n\n## 证据摘录\n- `ev-profile` · `s-profile-a` · body:sentence:1 — “LZ-7 是软件作者林舟的公开主页。”\n- `ev-release` · `s-news` · body:sentence:1 — “软件作者林舟发布 Lantern 2.0。”\n- `ev-news-ref` · `s-news` · body:sentence:2 — “本文引用主页 https://example.org/people/lz7 。”\n- `ev-cross` · `s-cross` · body:sentence:1 — “林舟在会议展示了 Lantern。”\n",
+    "person_anchors": [
+      "person-lz"
+    ],
+    "revision": 1
+  },
+  "schema_version": "stripsearch/evidence-gate-probe-v1",
+  "summary": {
+    "all_checks_passed": true,
+    "failed_cases": [],
+    "passed_cases": 23,
+    "passed_checks": 134,
+    "total_cases": 23,
+    "total_checks": 134
+  },
+  "synthetic": true
+}

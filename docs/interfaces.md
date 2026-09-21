@@ -59,6 +59,8 @@
 
 标准兼容基线参考 [MCP 2025-11-25 Tools](https://modelcontextprotocol.io/specification/2025-11-25/server/tools)。该版本 [Tasks](https://modelcontextprotocol.io/specification/2025-11-25/basic/utilities/tasks) 为实验能力，因此 MVP 用业务 job + get/resume 工具，不依赖客户端支持 Tasks。这是选定基线，不是声称它是最新协议。
 
+2026-09-20 初始化调研确认官方 TypeScript SDK 已进入 v2 稳定分包；具体包版本与本地兼容 smoke 见 [初始化方案](initialization-research.md#3-技术选型与官方资料核对)。该结果不自动改变此处的对外兼容基线，也不替代两个真实宿主的验收。
+
 ## 错误与兼容
 
 | 错误 | 调用方该怎么办 |

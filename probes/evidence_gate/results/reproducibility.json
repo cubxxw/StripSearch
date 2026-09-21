@@ -1,0 +1,31 @@
+{
+  "baseline_commit": "c70cbcb76b3f7f27858533c5cb439f982db079f0",
+  "executed_at": "2026-09-20T22:02:04+08:00",
+  "python": "3.12.14",
+  "platform": "Darwin",
+  "machine": "arm64",
+  "unittest": {
+    "command": "python3 -m unittest discover -s probes/evidence_gate -p 'test_*.py' -q",
+    "tests": 33,
+    "exit_code": 0
+  },
+  "declared_cases": {
+    "command": "python3 probes/evidence_gate/run.py --output probes/evidence_gate/results",
+    "cases": 23,
+    "checks": 134,
+    "exit_code": 0
+  },
+  "source_sha256": {
+    "probes/evidence_gate/cases.py": "d41ed6957e92858b8040180e33a5ac73c87afa650d6b3d03e5d3b7b6c44fbceb",
+    "probes/evidence_gate/core.py": "71a756d437cb66b1ac23c0fa8a51c622f91cb44b0a37674ee84779d9e8ff2682",
+    "probes/evidence_gate/fixtures.py": "a07e307608643cd20c5374e08c3def20ee89913ac477b1e10da1bf13b897eed8",
+    "probes/evidence_gate/run.py": "40dd77defb395c6f9369d8137936d68d9dc796bd1cc69c123e868ee5c9b03fb4",
+    "probes/evidence_gate/test_evidence_gate.py": "a448cf93f60ecee78a1b007729d3d5e4891affb03cd6a75652e7d5ce0d835fb4",
+    "probes/evidence_gate/test_review_regressions.py": "8a4a645d3629c3d2d3004c1d35fdf47a0939a36c24cd0a358bc63a87a9d270d9"
+  },
+  "limits": [
+    "Synthetic authored annotations, not semantic or real-world evaluation.",
+    "Human choice and dataset review remain unreviewed.",
+    "In-process network guard only; not an OS sandbox."
+  ]
+}

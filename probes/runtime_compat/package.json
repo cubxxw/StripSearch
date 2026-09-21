@@ -1,0 +1,14 @@
+{
+  "name": "stripsearch-runtime-compat-probe",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node smoke.mjs" },
+  "engines": { "node": ">=22" },
+  "dependencies": {
+    "@modelcontextprotocol/client": "2.0.0",
+    "@modelcontextprotocol/server": "2.0.0",
+    "better-sqlite3": "13.0.3",
+    "mcp-v1": "npm:@modelcontextprotocol/sdk@1.30.0",
+    "zod": "4.6.5"
+  }
+}
