@@ -90,4 +90,50 @@ CREATE TABLE IF NOT EXISTS run_events (
   UNIQUE(run_id, seq)
 );
 CREATE INDEX IF NOT EXISTS run_events_run_seq ON run_events(run_id, seq);
+
+-- Annotation workbench: immutable case snapshots and append-only human labels.
+CREATE TABLE IF NOT EXISTS review_cases (
+  id TEXT PRIMARY KEY,
+  owner_id TEXT NOT NULL,
+  seed_key TEXT,
+  dataset_version TEXT NOT NULL,
+  split TEXT NOT NULL DEFAULT 'discovery',
+  kind TEXT NOT NULL DEFAULT 'user',
+  title TEXT NOT NULL,
+  question TEXT NOT NULL,
+  as_of TEXT,
+  badge TEXT,
+  rubric_version INTEGER NOT NULL DEFAULT 1,
+  content_hash TEXT NOT NULL,
+  source_json TEXT NOT NULL,
+  candidate_json TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  deleted_at TEXT
+);
+CREATE INDEX IF NOT EXISTS review_cases_owner ON review_cases(owner_id, created_at DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS review_cases_seed ON review_cases(owner_id, seed_key) WHERE seed_key IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS review_annotations (
+  id TEXT PRIMARY KEY,
+  case_id TEXT NOT NULL REFERENCES review_cases(id) ON DELETE CASCADE,
+  owner_id TEXT NOT NULL,
+  revision INTEGER NOT NULL,
+  status TEXT NOT NULL,
+  actor_id TEXT NOT NULL,
+  actor_pseudonym TEXT NOT NULL,
+  case_hash TEXT NOT NULL,
+  rubric_version INTEGER NOT NULL,
+  decisions_json TEXT NOT NULL,
+  preference TEXT,
+  rationale TEXT,
+  reason_tags_json TEXT NOT NULL DEFAULT '[]',
+  reference_answer TEXT,
+  must_include_json TEXT NOT NULL DEFAULT '[]',
+  must_avoid_json TEXT NOT NULL DEFAULT '[]',
+  created_at TEXT NOT NULL,
+  UNIQUE(case_id, revision)
+);
+CREATE INDEX IF NOT EXISTS review_annotations_case ON review_annotations(case_id, revision DESC);
+CREATE INDEX IF NOT EXISTS review_annotations_owner ON review_annotations(owner_id, created_at DESC);
 `;

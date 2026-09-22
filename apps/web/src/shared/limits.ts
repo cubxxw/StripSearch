@@ -31,7 +31,28 @@ export const LIMITS = {
   startRateMax: 10,
 
   ssePollIntervalMs: 400,
-  sseHeartbeatMs: 15_000
+  sseHeartbeatMs: 15_000,
+
+  /** Annotation workbench bounds. */
+  reviewTitleMax: 120,
+  reviewAsOfMax: 40,
+  reviewSourceTitleMax: 160,
+  reviewSourceTextMax: 1200,
+  reviewSourceLocatorMax: 160,
+  reviewMaxSources: 12,
+  reviewCandidateOriginMax: 80,
+  reviewCandidateModelMax: 80,
+  reviewCandidateNotesMax: 200,
+  reviewMaxClaimsPerCandidate: 12,
+  reviewClaimTextMax: 600,
+  reviewNoteMax: 600,
+  reviewRationaleMax: 1200,
+  reviewReferenceAnswerMax: 2000,
+  reviewMustIncludeMax: 1200,
+  reviewMustAvoidMax: 1200,
+  reviewMaxReasonTags: 6,
+  reviewMaxCasesPerUser: 200,
+  reviewQueueLimit: 200
 } as const;
 
 export const SESSION_EXPIRES_SECONDS = 60 * 60 * 24 * 7;

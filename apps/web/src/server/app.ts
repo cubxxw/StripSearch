@@ -16,12 +16,15 @@ import {
   createOriginMiddleware
 } from './http/middleware.js';
 import { registerRunRoutes } from './routes/runs.js';
+import { registerReviewRoutes } from './routes/review.js';
 import type { Runner } from './services/runner.js';
+import type { ReviewStore } from './review-store.js';
 import type { Store } from './store.js';
 
 export interface AppDeps {
   config: AppConfig;
   store: Store;
+  reviewStore: ReviewStore;
   auth: Auth;
   runner: Runner;
   clientDir: string;
@@ -75,6 +78,7 @@ export function createApp(deps: AppDeps): Express {
     auth: deps.auth,
     exaConfigured: Boolean(deps.config.exaApiKey)
   });
+  registerReviewRoutes(apiRouter, { reviewStore: deps.reviewStore });
   app.use('/api', apiRouter);
 
   const clientIndex = path.join(deps.clientDir, 'index.html');
