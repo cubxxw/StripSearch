@@ -47,3 +47,13 @@ Certificate renewal belongs to the host. Confirm the timer covers this hostname 
 - [Nginx proxy headers](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_set_header) and [response buffering](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_buffering): overwritten proxy metadata and immediate SSE delivery.
 - [Docker host networking](https://docs.docker.com/engine/network/drivers/host/): Linux loopback topology.
 - [SQLite online backup](https://www.sqlite.org/backup.html): consistent backup while the application runs.
+
+## 线上验收记录
+
+2026-09-22：官网与工作台已部署到临时 HTTPS 地址 <https://stripsearch.103.195.188.236.sslip.io>。版本读取 `/release.json`，代码交付见 [PR #3](https://github.com/cubxxw/StripSearch/pull/3)。
+
+- 本地：88 项 Web 测试、类型检查、生产构建、设计与数据集完整性检查通过；40 个冻结回放通过（0 网络 / 模型调用）。
+- 服务器：镜像构建及健康检查通过；进程为非 root、只读容器，监听 loopback；HTTPS 证书有效；持久化目录和每日备份已配置，首次备份完整性检查通过。
+- 公网 API：Secure 登录、注册关闭、外来 / 缺失 Origin 拒绝、账号隔离、SSE、来源修订和同一版本 Markdown / JSON 导出通过。
+- 真实 GitHub：2 次请求，9 条来源，completed。真实 Exa：2 次请求，5 条来源，partial；生成摘要未被采用，界面与报告保留限制。这是连通性与契约验收，不是研究质量评测。
+- 初始账号由运营者私下交付；未迁移本机历史研究或其他账号。临时 DNS、单主机运行、仅同机备份和未实现邮件找回仍是使用边界。

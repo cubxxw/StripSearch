@@ -1,6 +1,6 @@
 # Web 运行时实施契约
 
-状态：本文件定义的独立可运行 Web alpha 已落在 `apps/web`（同源认证 + SQLite 作业 + GitHub 适配器 + 可选 Exa + 导出 + UI）。静态设计仍位于 `design/web`。该 alpha **不代表** M1–M4 整体通过，也不代表 Exa 真机或评测已验收。
+状态：本文件定义的独立可运行 Web alpha 已落在 `apps/web`（同源认证 + SQLite 作业 + GitHub 适配器 + 可选 Exa + 导出 + UI）。静态设计仍位于 `design/web`。该 alpha **不代表** M1–M4 整体通过，也不代表 Exa 回答质量或研究效果评测已验收。
 
 ## 本轮交付
 
@@ -62,7 +62,7 @@ npm --prefix apps/web start   # http://localhost:4392
 
 独立验收：63 项运行时测试、36 项静态设计交互测试、三套 TypeScript 检查和生产构建通过。真实 GitHub 调研完成（2 次请求、9 条来源）；账号隔离、退出失效、来源修订、Markdown / JSON 一致和服务重启持久化通过。Safari 完成登录与真实调研；内嵌 Chromium 完成历史恢复、引用、排除 / 恢复、刷新、明暗主题和 375px / reduced-motion 检查，控制台无错误。
 
-未验证：真实 Exa 服务与回答质量、MCP 宿主、TikHub、本地档案、研究效果评测、真实证书 / DNS / 反向代理与公网部署。邮箱未验证，邮件找回与 OAuth 未实现；GitHub 只读元数据。
+2026-09-22 托管部署的真实服务验收见[部署记录](deployment.md#线上验收记录)。未验证：Exa 回答质量、MCP 宿主、TikHub、本地档案和研究效果评测。邮箱未验证，邮件找回与 OAuth 未实现；GitHub 只读元数据。
 
 ## 官方接口依据
 
