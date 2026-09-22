@@ -1,0 +1,42 @@
+# Replace DOMAIN with the chosen DNS name; provision its certificate first.
+# Preserve unrelated virtual hosts. Test with nginx -t before reloading.
+server {
+    listen 80;
+    server_name DOMAIN;
+    location /.well-known/acme-challenge/ { root /var/www/acme; }
+    location / { return 301 https://DOMAIN$request_uri; }
+}
+server {
+    listen 443 ssl;
+    server_name DOMAIN;
+    ssl_certificate /etc/letsencrypt/live/DOMAIN/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/DOMAIN/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    server_tokens off;
+    client_max_body_size 32k;
+    client_body_timeout 15s;
+    add_header X-Content-Type-Options nosniff always;
+    add_header Referrer-Policy no-referrer always;
+    add_header X-Frame-Options DENY always;
+    add_header Strict-Transport-Security "max-age=31536000" always;
+    location / {
+        proxy_pass http://127.0.0.1:4392;
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_set_header Host DOMAIN;
+        proxy_set_header X-Forwarded-Host DOMAIN;
+        proxy_set_header X-Forwarded-Proto https;
+        # Overwrite client-provided addresses; never append an untrusted chain.
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header Forwarded "";
+        proxy_set_header CF-Connecting-IP "";
+        proxy_set_header True-Client-IP "";
+        # Preserve Origin so the application can reject foreign mutations.
+        proxy_set_header Origin $http_origin;
+        proxy_buffering off;
+        proxy_cache off;
+        proxy_read_timeout 300s;
+        proxy_send_timeout 60s;
+    }
+}

@@ -6,7 +6,7 @@ import { createExaProvider } from './adapters/exa.js';
 import { githubProvider } from './adapters/github.js';
 import { createApp } from './app.js';
 import { createAuth } from './auth.js';
-import { loadConfig } from './config.js';
+import { defaultClientDir, loadConfig } from './config.js';
 import type { AppConfig } from './config.js';
 import { openDatabase } from './db/index.js';
 import { migrateDatabase } from './db/migrate.js';
@@ -48,8 +48,7 @@ export async function bootstrap(
     providerFactory,
     transport: overrides.transport ?? defaultTransport
   });
-  const clientDir =
-    overrides.clientDir ?? fileURLToPath(new URL('../../dist/client', import.meta.url));
+  const clientDir = overrides.clientDir ?? defaultClientDir();
   const app = createApp({ config, store, auth, runner, clientDir });
   return { config, db, store, runner, app, interrupted };
 }

@@ -151,6 +151,28 @@ test('a failed auth response shows an error and re-enables the form', async () =
   assert.equal(env.document.getElementById('auth-email-error')?.textContent, '邮箱或密码不正确，请重试。');
 });
 
+test('a denied hosted signup surfaces the allowlist message', async () => {
+  const { calls, pending, api } = makeFakeApi();
+  const controller = createAuthController(api as never);
+  if (controller.isOpen()) controller.close();
+  const els = authElements();
+  controller.open('signup', () => undefined);
+  const nameInput = env.document.getElementById('auth-name') as HTMLInputElement;
+  nameInput.value = 'Mallory';
+  els.email.value = 'mallory@example.test';
+  els.password.value = 'password-1234';
+  submit(els.form);
+  await tick();
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0]?.type, 'signup');
+  pending[0]?.reject(new ApiError(403, 'SIGNUP_NOT_ALLOWED', '该邮箱不在允许注册的名单内。'));
+  await tick();
+  assert.equal(
+    env.document.getElementById('auth-email-error')?.textContent,
+    '该邮箱不在允许注册的名单内，请联系管理员或改用已登记邮箱。'
+  );
+});
+
 test('client-side validation blocks an invalid email before any request', async () => {
   const { calls, api } = makeFakeApi();
   const controller = createAuthController(api as never);

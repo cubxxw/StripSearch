@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, statSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import test from 'node:test';
-import { loadConfig } from '../server/config.js';
+import { defaultClientDir, defaultDataDir, loadConfig } from '../server/config.js';
 
 function tempDir(): string {
   return mkdtempSync(path.join(tmpdir(), 'stripsearch-config-'));
@@ -97,5 +98,129 @@ test('a local secret is generated once with mode 0600 and never defaults', () =>
     assert.ok(first.dbPath.startsWith(dir));
   } finally {
     rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('local mode is the default and keeps HTTP loopback behavior', () => {
+  const dir = tempDir();
+  try {
+    const config = loadConfig({ STRIPSEARCH_DATA_DIR: dir, PORT: '4392' });
+    assert.equal(config.deployment, 'local');
+    assert.equal(config.secureCookies, false);
+    assert.equal(config.signupEmails, null);
+    assert.equal(config.origin, 'http://localhost:4392');
+    assert.deepEqual(config.allowedOrigins, [
+      'http://localhost:4392',
+      'http://127.0.0.1:4392',
+      'http://[::1]:4392'
+    ]);
+
+    // An unrecognized deployment value is a configuration error, not a silent fallback.
+    assert.throws(
+      () => loadConfig({ STRIPSEARCH_DATA_DIR: dir, STRIPSEARCH_DEPLOYMENT: 'public' }),
+      /STRIPSEARCH_DEPLOYMENT/
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('hosted mode requires an explicit HTTPS origin and derives secure cookies', () => {
+  const dir = tempDir();
+  try {
+    const config = loadConfig({
+      STRIPSEARCH_DEPLOYMENT: 'hosted',
+      STRIPSEARCH_DATA_DIR: dir,
+      STRIPSEARCH_PUBLIC_ORIGIN: 'https://search.example.test',
+      STRIPSEARCH_SIGNUP_EMAILS: ' Alice@Example.Test , bob@example.test ,alice@example.test '
+    });
+    assert.equal(config.deployment, 'hosted');
+    assert.equal(config.secureCookies, true);
+    assert.equal(config.origin, 'https://search.example.test');
+    assert.deepEqual(config.allowedOrigins, ['https://search.example.test']);
+    assert.deepEqual(config.signupEmails, ['alice@example.test', 'bob@example.test']);
+    // The bind stays loopback even when the public origin is HTTPS.
+    assert.equal(config.host, '127.0.0.1');
+
+    // A reverse proxy may hold 443 while the process keeps the loopback PORT,
+    // so the public origin port is not tied to PORT in hosted mode.
+    const withPort = loadConfig({
+      STRIPSEARCH_DEPLOYMENT: 'hosted',
+      STRIPSEARCH_DATA_DIR: dir,
+      PORT: '4392',
+      STRIPSEARCH_PUBLIC_ORIGIN: 'https://search.example.test:8443'
+    });
+    assert.equal(withPort.origin, 'https://search.example.test:8443');
+
+    // Hosted mode with no configured list means every new signup is denied.
+    assert.deepEqual(withPort.signupEmails, []);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('hosted mode rejects missing, insecure or malformed origins', () => {
+  const base = { STRIPSEARCH_DEPLOYMENT: 'hosted', STRIPSEARCH_DATA_DIR: tempDir() };
+  const dir = base.STRIPSEARCH_DATA_DIR;
+  try {
+    assert.throws(
+      () => loadConfig({ STRIPSEARCH_DEPLOYMENT: 'hosted', STRIPSEARCH_DATA_DIR: dir }),
+      /STRIPSEARCH_PUBLIC_ORIGIN is required/
+    );
+    assert.throws(
+      () => loadConfig({ ...base, STRIPSEARCH_PUBLIC_ORIGIN: 'http://search.example.test' }),
+      /https in hosted mode/
+    );
+    assert.throws(
+      () => loadConfig({ ...base, STRIPSEARCH_PUBLIC_ORIGIN: 'https://search.example.test/app' }),
+      /without path/
+    );
+    assert.throws(
+      () => loadConfig({ ...base, STRIPSEARCH_PUBLIC_ORIGIN: 'https://search.example.test/?q=1' }),
+      /without path/
+    );
+    assert.throws(
+      () => loadConfig({ ...base, STRIPSEARCH_PUBLIC_ORIGIN: 'https://search.example.test/#x' }),
+      /without path/
+    );
+    assert.throws(
+      () => loadConfig({ ...base, STRIPSEARCH_PUBLIC_ORIGIN: 'https://user:pass@search.example.test' }),
+      /credentials/
+    );
+    assert.throws(
+      () => loadConfig({ ...base, STRIPSEARCH_PUBLIC_ORIGIN: 'https://*.example.test' }),
+      /wildcards/
+    );
+    assert.throws(
+      () =>
+        loadConfig({
+          ...base,
+          STRIPSEARCH_PUBLIC_ORIGIN: 'https://search.example.test',
+          STRIPSEARCH_SIGNUP_EMAILS: 'alice@example.test,*@example.test'
+        }),
+      /exact addresses/
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('default data and client dirs stay anchored at apps/web in source and compiled output', async () => {
+  const appRoot = fileURLToPath(new URL('../../', import.meta.url));
+  assert.equal(defaultDataDir(), path.join(appRoot, '.data'));
+  assert.equal(defaultClientDir(), path.join(appRoot, 'dist', 'client'));
+
+  const compiledUrl = new URL('../../dist/server/config.js', import.meta.url);
+  if (existsSync(fileURLToPath(compiledUrl))) {
+    const compiled = (await import(compiledUrl.href)) as {
+      defaultDataDir: () => string;
+      defaultClientDir: () => string;
+      loadConfig: (env: NodeJS.ProcessEnv) => { dataDir: string };
+    };
+    assert.equal(compiled.defaultDataDir(), path.join(appRoot, '.data'));
+    assert.equal(compiled.defaultClientDir(), path.join(appRoot, 'dist', 'client'));
+    // No env secret here would write auth-secret into the real .data dir.
+    const config = compiled.loadConfig({ BETTER_AUTH_SECRET: 'x'.repeat(40), PORT: '4392' });
+    assert.equal(config.dataDir, path.join(appRoot, '.data'));
   }
 });

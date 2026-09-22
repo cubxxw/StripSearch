@@ -6,7 +6,9 @@
 
 StripSearch 是一个以身份核验和证据追溯为核心的人物研究 Agent 设计。计划提供本地 Agent、CLI 与 MCP 接口，输出带人物索引、原始链接和证据状态的 Markdown / JSON 报告。
 
-> **当前阶段：设计基线 v0.1 + 可运行 Web alpha，2026-09-21。** 邮箱登录、研究记录、GitHub 公开资料读取和来源修订已实现并验收。Exa 适配器已实现，真实服务待配置；完整 Agent、CLI、MCP 和研究效果评测尚未交付。
+> **当前阶段：设计基线 v0.1 + 可运行 Web alpha，2026-09-21。** 邮箱登录、研究记录、GitHub 公开资料读取和来源修订已实现并验收。HTTPS 托管已上线，Exa 已连通（本次返回部分结果）；完整 Agent、CLI、MCP 和研究效果评测尚未交付。
+
+**在线官网与工作台：** <https://stripsearch.103.195.188.236.sslip.io>（临时地址；登录受限，尚无邮件找回）。
 
 **Web 入口：** [`apps/web`](apps/web/README.md) 提供同一份 canonical 报告上的真实认证、按账号隔离的 SQLite 研究作业、GitHub 公开资料读取、可选 Exa 检索与 Markdown / JSON 导出。运行方式、实际限制与未验证边界见该说明；这不代表 M1–M4 整体通过。
 
@@ -36,6 +38,10 @@ StripSearch 是一个以身份核验和证据追溯为核心的人物研究 Agen
 
 先看一份[合成报告](examples/report.md)，再对照[同一份 JSON](examples/report.json)和[请求配置](examples/request.json)。样例域名 `example.org` 是占位标识，不应抓取。
 
+## 部署
+
+官网与工作台共用 `apps/web`，采用 Nginx HTTPS + 单实例 Node / SQLite 部署。容器、持久化、注册控制、备份与回滚步骤见[部署说明](docs/deployment.md)。代码与容器检查不等于线上验收；实际发布版本通过 `/release.json` 核对。
+
 ## 核心设计
 
 ```mermaid
@@ -63,4 +69,4 @@ flowchart LR
 
 ---
 
-**English:** StripSearch is a design-stage, evidence-first research agent for public professional activity and authorized materials. It separates identity linkage, observed actions, attributed statements and hypotheses. Planned interfaces are a local agent, CLI and MCP; reports share a canonical JSON model. A local authenticated Web alpha includes live GitHub metadata research and optional Exa adapters. CLI, MCP, production deployment and benchmark results are not released.
+**English:** StripSearch is a design-stage, evidence-first research agent for public professional activity and authorized materials. It separates identity linkage, observed actions, attributed statements and hypotheses. Planned interfaces are a local agent, CLI and MCP; reports share a canonical JSON model. An authenticated Web alpha includes GitHub metadata research and an optional Exa adapter. A single-host HTTPS alpha is deployed; CLI, MCP and research-quality benchmarks are not released.

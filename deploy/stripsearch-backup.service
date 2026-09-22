@@ -1,0 +1,12 @@
+[Unit]
+Description=StripSearch consistent SQLite backup
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /opt/stripsearch/ops/backup.py
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadOnlyPaths=/var/lib/stripsearch
+ReadWritePaths=/var/backups/stripsearch

@@ -1,6 +1,6 @@
 # Web 运行时实施契约
 
-状态：本文件定义的独立可运行 Web alpha 已落在 `apps/web`（同源认证 + SQLite 作业 + GitHub 适配器 + 可选 Exa + 导出 + UI）。静态设计仍位于 `design/web`。该 alpha **不代表** M1–M4 整体通过，也不代表 Exa 真机或评测已验收。
+状态：本文件定义的独立可运行 Web alpha 已落在 `apps/web`（同源认证 + SQLite 作业 + GitHub 适配器 + 可选 Exa + 导出 + UI）。静态设计仍位于 `design/web`。该 alpha **不代表** M1–M4 整体通过，也不代表 Exa 回答质量或研究效果评测已验收。
 
 ## 本轮交付
 
@@ -15,6 +15,15 @@
 Node 22.23.2、TypeScript、Express 5.2.1、Better Auth 1.7.5、SQLite（better-sqlite3）、Vite 8.3.0 vanilla TypeScript。依赖锁定版本并提交 lockfile。认证交给 Better Auth，不自行设计密码哈希协议。
 
 只绑定 loopback；浏览器与 API 同源。会话为 HttpOnly cookie，独立 cookie 前缀、SameSite、服务端校验、认证与任务限流。所有研究、来源、事件、导出接口校验资源所有者；修改接口校验 Origin。密钥只在服务端，运行数据与本地认证 secret 排除 Git。
+
+### 部署模式（`STRIPSEARCH_DEPLOYMENT=local|hosted`，默认 local）
+
+- `local` 保持既有 HTTP loopback 行为：`STRIPSEARCH_PUBLIC_ORIGIN` 默认 `http://localhost:PORT`，必须是 loopback HTTP 且端口匹配 `PORT`，cookie 不带 Secure。
+- `hosted` 要求显式 HTTPS `STRIPSEARCH_PUBLIC_ORIGIN`（无凭据、路径、查询、片段或通配符），只信任这一个 Origin，cookie 变为 Secure（名称为 `__Secure-stripsearch.*`），仍只绑定 loopback，由本机反向代理终止 TLS。`host/port` 与反向代理无关：进程继续监听 loopback `PORT`，公网端口不必等于 `PORT`。
+- `baseURL` 固定为配置的 Origin，不信任 `X-Forwarded-Host` / `X-Forwarded-Proto`。hosted 下认证变更（注册 / 登录 / 退出）与其它变更接口一样必须携带精确 Origin，缺失或外来 Origin 返回 403。
+- hosted 注册要求服务端配置 `STRIPSEARCH_SIGNUP_EMAILS`（逗号分隔、大小写不敏感、精确地址，不支持通配符）。名单为空时拒绝全部新注册，但已存在账号仍可登录；被拒注册在 UI 显示可读提示。local 模式不受此名单限制。
+- 反向代理头契约：代理终止公网 HTTPS，并转发到 loopback `PORT`，用客户端真实 IP **覆盖**（不是追加）`X-Forwarded-For`，可选择同时覆盖 `X-Real-IP`。服务端仅在 hosted 模式信任来自 loopback（`127.0.0.1` / `::1`）的这些头，用于认证限流的 IP 归并；不信任任意转发头来改写 origin、主机或协议。
+- 部署拓扑、持久化和线上验收流程见[部署说明](deployment.md)。离线检查不代替证书、代理、真实会话和重启持久化验收。
 
 ## 研究与数据契约
 
@@ -42,18 +51,18 @@ npm --prefix apps/web run build
 npm --prefix apps/web start   # http://localhost:4392
 ```
 
-- 认证：真实邮箱密码注册 / 登录 / 退出 / 会话；cookie 前缀 `stripsearch`、HttpOnly、SameSite=Lax、7 天；注册输入受限；认证请求体按实际字节限制（含 chunked），限流开发环境也启用；私有 `/api` 响应 `no-store`。
+- 认证：真实邮箱密码注册 / 登录 / 退出 / 会话；cookie 前缀 `stripsearch`、HttpOnly、SameSite=Lax、7 天（hosted 追加 Secure），名称在 hosted 为 `__Secure-stripsearch.*`；注册输入受限；认证请求体按实际字节限制（含 chunked），限流开发环境也启用；私有 `/api` 响应 `no-store`。
 - 作业：单进程持久化队列（每用户 1、全局 3），`queued → researching → completed | partial | failed | cancelled | needs_input`；启动限流每用户 60 秒 10 次，记录上限 200。
 - 研究：仅同一 `Idempotency-Key` + 同一规范化请求返回已有运行，已删除记录返回 410，不隐式重新调用；新键或省略键创建新研究；取消 / 删除后晚回包被丢弃（删除先中止作业）；重启把未完成作业转为 `partial` 并记 `interrupted`，不自动重跑。
 - Provider：GitHub 固定 `https://api.github.com`，仅接受与请求 handle 一致的账号与仓库，每账号 2 次请求、一页 30 个仓库、最多展示 8 个非 fork 作品；Exa 固定 `https://api.exa.ai`，检索与整理回答都以种子 grounded，引用必须全部有效且映射到来源，否则不采用整理结果；两者超时 15 秒、响应 512 KiB。
 - 来源修订：排除 / 恢复基于 `expectedRevision`，过期返回 409；依赖结论、SSE 与 Markdown / JSON 导出读取同一规范化视图。
 - 界面：系统明暗主题、reduced motion、SSE 重连与会话撤销后关闭、来源抽屉焦点保留、44px 触控目标；动效只用 transform / opacity；异步请求按运行 / 会话世代丢弃迟到结果。
 
-已由 `npm --prefix apps/web test` 离线验证：认证 cookie 与退出、跨账号授权、Origin 拒绝、边界（含 chunked 超限）与幂等键语义、并发、取消 / 删除晚回包、重启中断保留、适配器固定端点 / 账号归属 / 超时 / 重定向 / 429 / 403 / 404 / 非法引用、来源修订与导出一致、SSE 终态与会话撤销、jsdom 真实控制器回归与渲染转义 / 链接安全。
+已由 `npm --prefix apps/web test` 离线验证：认证 cookie 与退出、跨账号授权、Origin 拒绝、边界（含 chunked 超限）与幂等键语义、并发、取消 / 删除晚回包、重启中断保留、适配器固定端点 / 账号归属 / 超时 / 重定向 / 429 / 403 / 404 / 非法引用、来源修订与导出一致、SSE 终态与会话撤销、jsdom 真实控制器回归与渲染转义 / 链接安全；另含 hosted 配置校验（Origin / Secure cookie / 名单）、hosted 注册 / 会话 / 退出与拒绝注册、认证与业务变更的 Origin 缺失 / 伪造拒绝、受限注册的 UI 提示，以及编译产物启动并从 `dist/client` 提供真实客户端资源。
 
 独立验收：63 项运行时测试、36 项静态设计交互测试、三套 TypeScript 检查和生产构建通过。真实 GitHub 调研完成（2 次请求、9 条来源）；账号隔离、退出失效、来源修订、Markdown / JSON 一致和服务重启持久化通过。Safari 完成登录与真实调研；内嵌 Chromium 完成历史恢复、引用、排除 / 恢复、刷新、明暗主题和 375px / reduced-motion 检查，控制台无错误。
 
-未验证：真实 Exa 服务与回答质量、MCP 宿主、TikHub、本地档案、研究效果评测和公网部署。邮箱未验证，邮件找回与 OAuth 未实现；GitHub 只读元数据。
+2026-09-22 托管部署的真实服务验收见[部署记录](deployment.md#线上验收记录)。未验证：Exa 回答质量、MCP 宿主、TikHub、本地档案和研究效果评测。邮箱未验证，邮件找回与 OAuth 未实现；GitHub 只读元数据。
 
 ## 官方接口依据
 

@@ -10,6 +10,7 @@ import {
   createAuthBodyLimitMiddleware,
   createAuthMiddleware,
   createAuthNodeHandler,
+  createAuthOriginMiddleware,
   createErrorHandler,
   createNoStoreMiddleware,
   createOriginMiddleware
@@ -29,13 +30,17 @@ export interface AppDeps {
 export function createApp(deps: AppDeps): Express {
   const app = express();
   app.disable('x-powered-by');
-  app.set('trust proxy', false);
+  // Hosted deployments sit behind a loopback reverse proxy that overwrites
+  // X-Forwarded-For / X-Real-IP; only those loopback hops are trusted. Local
+  // mode keeps the historical no-proxy behavior.
+  app.set('trust proxy', deps.config.deployment === 'hosted' ? 'loopback' : false);
 
   // Better Auth must be mounted before any body parser: it reads the raw stream
   // itself. The bounded adapter caps the actual bytes, not just Content-Length.
   app.use('/api', createNoStoreMiddleware());
   app.all(
     '/api/auth/*splat',
+    createAuthOriginMiddleware(deps.config),
     createAuthBodyLimitMiddleware(LIMITS.authBodyBytes),
     createAuthNodeHandler(deps.auth, deps.config)
   );
