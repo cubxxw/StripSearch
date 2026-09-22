@@ -143,28 +143,33 @@ export interface TestServer {
   close(): Promise<void>;
 }
 
+export interface TestServerOptions {
+  /** Reuse an existing data dir, e.g. to restart a server with the same accounts. */
+  dataDir?: string;
+  /** Keep the data dir after close so a later server can reuse it. */
+  preserveData?: boolean;
+}
+
 export async function startTestServer(
   overrides: BootstrapOverrides = {},
-  envOverrides: NodeJS.ProcessEnv = {}
+  envOverrides: NodeJS.ProcessEnv = {},
+  options: TestServerOptions = {}
 ): Promise<TestServer> {
-  const dataDir = mkdtempSync(path.join(tmpdir(), 'stripsearch-test-'));
+  const dataDir = options.dataDir ?? mkdtempSync(path.join(tmpdir(), 'stripsearch-test-'));
   const port = await freePort();
-  const env: NodeJS.ProcessEnv = {
-    ...process.env,
-    NODE_ENV: 'test',
-    STRIPSEARCH_DATA_DIR: dataDir,
-    STRIPSEARCH_PUBLIC_ORIGIN: `http://localhost:${port}`,
-    PORT: String(port),
-    ...envOverrides
-  };
+  const env: NodeJS.ProcessEnv = { ...process.env, NODE_ENV: 'test' };
   delete env.EXA_API_KEY;
   delete env.GITHUB_TOKEN;
+  delete env.STRIPSEARCH_PUBLIC_ORIGIN;
   Object.assign(env, envOverrides);
+  env.PORT = String(port);
+  env.STRIPSEARCH_DATA_DIR = dataDir;
+  if (!env.STRIPSEARCH_PUBLIC_ORIGIN) env.STRIPSEARCH_PUBLIC_ORIGIN = `http://localhost:${port}`;
   const boot = await bootstrap(env, overrides);
   const server = boot.app.listen(port, '127.0.0.1');
   await new Promise<void>((resolve) => server.once('listening', resolve));
   const baseUrl = `http://127.0.0.1:${port}`;
-  const origin = `http://localhost:${port}`;
+  const origin = boot.config.origin;
   const client = new TestClient(baseUrl, origin);
   return {
     client,
@@ -175,7 +180,7 @@ export async function startTestServer(
     async close() {
       boot.runner.stopAll();
       await new Promise<void>((resolve) => server.close(() => resolve()));
-      rmSync(dataDir, { recursive: true, force: true });
+      if (!options.preserveData) rmSync(boot.config.dataDir, { recursive: true, force: true });
     }
   };
 }

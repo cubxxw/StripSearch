@@ -55,6 +55,27 @@ export function createOriginMiddleware(config: AppConfig) {
   };
 }
 
+/**
+ * Hosted authentication mutations (sign-up/sign-in/sign-out) must carry the one
+ * configured public origin. Missing or foreign Origins are rejected before the
+ * request reaches Better Auth. Local mode keeps Better Auth's historical CSRF
+ * behavior and does not add this stricter gate.
+ */
+export function createAuthOriginMiddleware(config: AppConfig) {
+  return (req: Request, _res: Response, next: NextFunction): void => {
+    if (config.deployment !== 'hosted' || !MUTATING_METHODS.has(req.method)) {
+      next();
+      return;
+    }
+    const origin = req.headers.origin;
+    if (typeof origin !== 'string' || origin !== config.origin) {
+      next(new HttpError(403, 'origin_rejected', '请求来源不被信任。'));
+      return;
+    }
+    next();
+  };
+}
+
 /** Cap the auth body before Better Auth reads the raw stream. */
 export function createAuthBodyLimitMiddleware(maxBytes: number) {
   return (req: Request, _res: Response, next: NextFunction): void => {

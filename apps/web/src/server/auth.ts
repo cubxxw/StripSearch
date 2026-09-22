@@ -8,15 +8,21 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
  * Better Auth owns password hashing and sessions. This module only constrains
- * the signup payload and pins the cookie / session / rate-limit policy.
+ * the signup payload, pins the cookie / session / rate-limit policy, and, in
+ * hosted mode, enforces the explicit public origin and the signup allowlist.
  */
 export function createAuth(db: DB, config: AppConfig) {
+  const hosted = config.deployment === 'hosted';
+  const signupAllowlist = config.signupEmails;
+
   return betterAuth({
     appName: 'StripSearch',
+    // Explicit origin only: forwarded host/proto headers never influence it.
     baseURL: config.origin,
     basePath: '/api/auth',
     secret: config.authSecret,
     database: db,
+    // Local keeps every loopback origin; hosted trusts the single configured one.
     trustedOrigins: config.allowedOrigins,
     emailAndPassword: {
       enabled: true,
@@ -40,16 +46,29 @@ export function createAuth(db: DB, config: AppConfig) {
     },
     advanced: {
       cookiePrefix: 'stripsearch',
-      useSecureCookies: false,
+      useSecureCookies: config.secureCookies,
+      // Never infer the base URL from X-Forwarded-Host / X-Forwarded-Proto.
+      trustedProxyHeaders: false,
       // Migrations are applied explicitly on boot (db/migrate.ts), so runtime
       // schema validation would only log a false mismatch during init.
       database: { validateSchema: false },
       defaultCookieAttributes: {
         httpOnly: true,
         sameSite: 'lax',
-        secure: false,
+        secure: config.secureCookies,
         path: '/'
-      }
+      },
+      ...(hosted
+        ? {
+            // The deployment reverse proxy runs on loopback and overwrites
+            // X-Forwarded-For / X-Real-IP with the immediate client IP.
+            // Trust is scoped to those loopback hops only.
+            ipAddress: {
+              ipAddressHeaders: ['x-forwarded-for', 'x-real-ip'],
+              trustedProxies: ['127.0.0.1', '::1']
+            }
+          }
+        : {})
     },
     telemetry: { enabled: false },
     databaseHooks: {
@@ -63,6 +82,14 @@ export function createAuth(db: DB, config: AppConfig) {
             const email = typeof user.email === 'string' ? user.email.trim() : '';
             if (email.length === 0 || email.length > 254 || !EMAIL_RE.test(email)) {
               throw new APIError('BAD_REQUEST', { message: '邮箱格式不正确。' });
+            }
+            // Hosted registration is allowlist-only. An empty configured list
+            // rejects every new account; existing accounts can still sign in.
+            if (signupAllowlist && !signupAllowlist.includes(email.toLowerCase())) {
+              throw new APIError('FORBIDDEN', {
+                message: '该邮箱不在允许注册的名单内。',
+                code: 'SIGNUP_NOT_ALLOWED'
+              });
             }
             return { data: { ...user, name, email } };
           }

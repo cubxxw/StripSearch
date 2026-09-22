@@ -5,6 +5,9 @@ import path from 'node:path';
 
 const DEFAULT_PORT = 4392;
 const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '::1']);
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export type DeploymentMode = 'local' | 'hosted';
 
 export function isLoopbackHostname(hostname: string): boolean {
   const host = hostname.toLowerCase().replace(/^\[|\]$/g, '');
@@ -12,12 +15,21 @@ export function isLoopbackHostname(hostname: string): boolean {
 }
 
 export interface AppConfig {
+  /** `local` keeps the historical HTTP loopback defaults; `hosted` is explicit. */
+  deployment: DeploymentMode;
   host: '127.0.0.1' | 'localhost' | '::1';
   port: number;
   /** Canonical same-origin used by Better Auth and Origin checks. */
   origin: string;
-  /** Every accepted loopback origin for this port. */
+  /** Every accepted loopback origin for this port (exactly one in hosted mode). */
   allowedOrigins: string[];
+  /** Secure cookies are derived from hosted HTTPS only. */
+  secureCookies: boolean;
+  /**
+   * Normalized lowercase signup allowlist. `null` means local mode is
+   * unrestricted; an empty array means hosted mode rejects every new signup.
+   */
+  signupEmails: string[] | null;
   authSecret: string;
   authSecretSource: 'env' | 'file';
   dataDir: string;
@@ -28,8 +40,22 @@ export interface AppConfig {
   isTest: boolean;
 }
 
-function defaultDataDir(): string {
-  return fileURLToPath(new URL('../../.data', import.meta.url));
+/**
+ * Package root (`apps/web`) is exactly two segments above both the source module
+ * (`src/server/config.ts`) and the compiled module (`dist/server/config.js`), so
+ * these defaults are identical whether the server runs from source or `dist`.
+ * Keep them anchored here instead of resolving from a per-module depth.
+ */
+function packageRoot(): string {
+  return fileURLToPath(new URL('../..', import.meta.url));
+}
+
+export function defaultDataDir(): string {
+  return path.join(packageRoot(), '.data');
+}
+
+export function defaultClientDir(): string {
+  return path.join(packageRoot(), 'dist', 'client');
 }
 
 function readOrCreateSecret(dataDir: string): { secret: string; source: 'file' } {
@@ -61,7 +87,53 @@ function readOrCreateSecret(dataDir: string): { secret: string; source: 'file' }
   return { secret: generated, source: 'file' };
 }
 
+function parseDeployment(raw: string | undefined): DeploymentMode {
+  const value = (raw ?? 'local').trim().toLowerCase();
+  if (value !== 'local' && value !== 'hosted') {
+    throw new Error(`STRIPSEARCH_DEPLOYMENT must be "local" or "hosted", received "${raw}".`);
+  }
+  return value;
+}
+
+/** Normalize a comma-separated allowlist; exact addresses only, case-insensitive. */
+function parseSignupEmails(raw: string | undefined): string[] {
+  const entries = (raw ?? '')
+    .split(',')
+    .map((entry) => entry.trim().toLowerCase())
+    .filter((entry) => entry.length > 0);
+  for (const entry of entries) {
+    if (entry.includes('*') || !EMAIL_RE.test(entry)) {
+      throw new Error(
+        `STRIPSEARCH_SIGNUP_EMAILS must list exact addresses (no wildcards or spaces), received "${entry}".`
+      );
+    }
+  }
+  return [...new Set(entries)];
+}
+
+function parseOrigin(origin: string): URL {
+  let parsed: URL;
+  try {
+    parsed = new URL(origin);
+  } catch {
+    throw new Error(`STRIPSEARCH_PUBLIC_ORIGIN is not a valid URL: "${origin}".`);
+  }
+  if (origin.includes('*') || parsed.hostname.includes('*')) {
+    throw new Error('STRIPSEARCH_PUBLIC_ORIGIN must not contain wildcards.');
+  }
+  if (parsed.username || parsed.password) {
+    throw new Error('STRIPSEARCH_PUBLIC_ORIGIN must not contain credentials.');
+  }
+  if (parsed.pathname !== '/' || parsed.search || parsed.hash) {
+    throw new Error('STRIPSEARCH_PUBLIC_ORIGIN must be an origin without path, query or fragment.');
+  }
+  return parsed;
+}
+
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
+  const deployment = parseDeployment(env.STRIPSEARCH_DEPLOYMENT);
+  const hosted = deployment === 'hosted';
+
   const rawHost = (env.STRIPSEARCH_HOST ?? '127.0.0.1').trim();
   if (!isLoopbackHostname(rawHost)) {
     throw new Error(`STRIPSEARCH_HOST must be a loopback address, received "${rawHost}".`);
@@ -94,42 +166,53 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     authSecretSource = created.source;
   }
 
-  const origin = (env.STRIPSEARCH_PUBLIC_ORIGIN ?? `http://localhost:${port}`).trim();
-  let parsedOrigin: URL;
-  try {
-    parsedOrigin = new URL(origin);
-  } catch {
-    throw new Error(`STRIPSEARCH_PUBLIC_ORIGIN is not a valid URL: "${origin}".`);
-  }
-  if (parsedOrigin.protocol !== 'http:') {
-    throw new Error('STRIPSEARCH_PUBLIC_ORIGIN must use http on loopback.');
-  }
-  if (parsedOrigin.username || parsedOrigin.password) {
-    throw new Error('STRIPSEARCH_PUBLIC_ORIGIN must not contain credentials.');
-  }
-  if (!isLoopbackHostname(parsedOrigin.hostname)) {
-    throw new Error(`STRIPSEARCH_PUBLIC_ORIGIN must stay on loopback, received "${origin}".`);
-  }
-  if (parsedOrigin.pathname !== '/' || parsedOrigin.search || parsedOrigin.hash) {
-    throw new Error('STRIPSEARCH_PUBLIC_ORIGIN must be an origin without path, query or fragment.');
-  }
-  if (parsedOrigin.port !== String(port)) {
+  // Local mode keeps the historical default and the loopback port check.
+  // Hosted mode requires an explicit HTTPS origin (a reverse proxy may hold
+  // 443 while the process keeps listening on the loopback PORT), so the
+  // public port is intentionally not tied to PORT.
+  const rawOrigin = hosted
+    ? env.STRIPSEARCH_PUBLIC_ORIGIN?.trim()
+    : (env.STRIPSEARCH_PUBLIC_ORIGIN ?? `http://localhost:${port}`).trim();
+  if (!rawOrigin) {
     throw new Error(
-      `STRIPSEARCH_PUBLIC_ORIGIN port must match PORT (${port}), received "${origin}".`
+      'STRIPSEARCH_PUBLIC_ORIGIN is required when STRIPSEARCH_DEPLOYMENT=hosted (explicit https origin).'
     );
   }
+  const parsedOrigin = parseOrigin(rawOrigin);
 
-  const allowedOrigins = [
-    `http://localhost:${port}`,
-    `http://127.0.0.1:${port}`,
-    `http://[::1]:${port}`
-  ];
+  if (hosted) {
+    if (parsedOrigin.protocol !== 'https:') {
+      throw new Error('STRIPSEARCH_PUBLIC_ORIGIN must use https in hosted mode.');
+    }
+  } else {
+    if (parsedOrigin.protocol !== 'http:') {
+      throw new Error('STRIPSEARCH_PUBLIC_ORIGIN must use http on loopback in local mode.');
+    }
+    if (!isLoopbackHostname(parsedOrigin.hostname)) {
+      throw new Error(
+        `STRIPSEARCH_PUBLIC_ORIGIN must stay on loopback in local mode, received "${rawOrigin}".`
+      );
+    }
+    if (parsedOrigin.port !== String(port)) {
+      throw new Error(
+        `STRIPSEARCH_PUBLIC_ORIGIN port must match PORT (${port}), received "${rawOrigin}".`
+      );
+    }
+  }
+
+  const origin = parsedOrigin.origin;
+  const allowedOrigins = hosted
+    ? [origin]
+    : [`http://localhost:${port}`, `http://127.0.0.1:${port}`, `http://[::1]:${port}`];
 
   return {
+    deployment,
     host,
     port,
-    origin: parsedOrigin.origin,
+    origin,
     allowedOrigins,
+    secureCookies: hosted,
+    signupEmails: hosted ? parseSignupEmails(env.STRIPSEARCH_SIGNUP_EMAILS) : null,
     authSecret,
     authSecretSource,
     dataDir,

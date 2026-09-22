@@ -36,6 +36,10 @@ StripSearch 是一个以身份核验和证据追溯为核心的人物研究 Agen
 
 先看一份[合成报告](examples/report.md)，再对照[同一份 JSON](examples/report.json)和[请求配置](examples/request.json)。样例域名 `example.org` 是占位标识，不应抓取。
 
+## 部署
+
+官网与工作台共用 `apps/web`，采用 Nginx HTTPS + 单实例 Node / SQLite 部署。容器、持久化、注册控制、备份与回滚步骤见[部署说明](docs/deployment.md)。代码与容器检查不等于线上验收；实际发布版本通过 `/release.json` 核对。
+
 ## 核心设计
 
 ```mermaid
