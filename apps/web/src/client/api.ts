@@ -5,6 +5,15 @@ import type {
   RunSummary,
   SessionUser
 } from '../shared/types.js';
+import type {
+  ReviewAnnotationSaveInput,
+  ReviewAnnotationView,
+  ReviewCaseResponse,
+  ReviewHistoryEntry,
+  ReviewInsights,
+  ReviewProgress,
+  ReviewQueueItem
+} from '../shared/review.js';
 
 export class ApiError extends Error {
   constructor(
@@ -215,5 +224,87 @@ export class ApiClient {
     );
     if (!data.run) throw new ApiError(500, 'invalid_response', '服务器响应缺少研究数据。');
     return { run: data.run, changed: Boolean(data.changed) };
+  }
+
+  /* ---------------- annotation workbench ---------------- */
+
+  async seedReviewCases(): Promise<{ inserted: number; total: number; badge: string }> {
+    return this.request<{ inserted: number; total: number; badge: string }>('/api/review/seed', {
+      method: 'POST',
+      body: '{}'
+    });
+  }
+
+  async listReviewCases(): Promise<{ cases: ReviewQueueItem[]; progress: ReviewProgress }> {
+    const data = await this.request<{ cases?: ReviewQueueItem[]; progress?: ReviewProgress }>(
+      '/api/review/cases'
+    );
+    return {
+      cases: data.cases ?? [],
+      progress: data.progress ?? { total: 0, reviewed: 0, draft: 0, unreviewed: 0 }
+    };
+  }
+
+  async createReviewCase(input: {
+    title?: string;
+    question: string;
+    asOf?: string | null;
+    sources: { title: string; text: string; locator?: string | null }[];
+    candidates: { response: string; origin?: string | null; model?: string | null; notes?: string | null }[];
+  }): Promise<ReviewQueueItem> {
+    const data = await this.request<{ case?: ReviewQueueItem }>('/api/review/cases', {
+      method: 'POST',
+      body: JSON.stringify(input)
+    });
+    if (!data.case) throw new ApiError(500, 'invalid_response', '服务器响应缺少案例数据。');
+    return data.case;
+  }
+
+  async getReviewCase(caseId: string): Promise<ReviewCaseResponse> {
+    const data = await this.request<ReviewCaseResponse>(
+      `/api/review/cases/${encodeURIComponent(caseId)}`
+    );
+    if (!data.case) throw new ApiError(404, 'case_not_found', '未找到该标注案例。');
+    return { case: data.case, annotation: data.annotation ?? null, history: data.history ?? [] };
+  }
+
+  async saveReviewAnnotation(
+    caseId: string,
+    input: ReviewAnnotationSaveInput
+  ): Promise<{ annotation: ReviewAnnotationView; acknowledgment: string }> {
+    const data = await this.request<{ annotation?: ReviewAnnotationView; acknowledgment?: string }>(
+      `/api/review/cases/${encodeURIComponent(caseId)}/annotation`,
+      { method: 'PUT', body: JSON.stringify(input) }
+    );
+    if (!data.annotation) throw new ApiError(500, 'invalid_response', '服务器响应缺少保存结果。');
+    return { annotation: data.annotation, acknowledgment: data.acknowledgment ?? '已保存' };
+  }
+
+  async deleteReviewCase(caseId: string): Promise<void> {
+    await this.request(`/api/review/cases/${encodeURIComponent(caseId)}`, { method: 'DELETE' });
+  }
+
+  async getReviewInsights(): Promise<ReviewInsights> {
+    const data = await this.request<{ insights?: ReviewInsights }>('/api/review/insights');
+    if (!data.insights) throw new ApiError(500, 'invalid_response', '服务器响应缺少汇总数据。');
+    return data.insights;
+  }
+
+  async getReviewHistory(
+    caseId: string
+  ): Promise<{ history: ReviewHistoryEntry[]; revisions: ReviewAnnotationView[] }> {
+    const data = await this.request<{ history?: ReviewHistoryEntry[]; revisions?: ReviewAnnotationView[] }>(
+      `/api/review/cases/${encodeURIComponent(caseId)}/history`
+    );
+    return { history: data.history ?? [], revisions: data.revisions ?? [] };
+  }
+
+  async exportReview(format: 'json' | 'jsonl', filter: 'all' | 'reviewed'): Promise<string> {
+    const response = await fetch(
+      `${this.baseUrl}/api/review/export?format=${format}&filter=${filter}`,
+      { credentials: 'same-origin' }
+    );
+    if (!response.ok) throw new ApiError(response.status, 'export_failed', '导出失败。');
+    return response.text();
   }
 }

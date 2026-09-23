@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { SCHEMA_VERSION } from '../shared/types.js';
 import type { CanonicalView, SessionUser } from '../shared/types.js';
+import type { ReviewCaseDetail, ReviewQueueItem } from '../shared/review.js';
 import { installDom, installFetch, jsonResponse, textResponse } from './dom-env.js';
 import { deferred } from './fakes.js';
 
@@ -76,7 +77,7 @@ let route: RouteHandler = () => jsonResponse({});
 installFetch((url, init) => route(url, init));
 
 const main = await import('../client/main.js');
-const { state, selectRun, loadRuns, signOut, cancelRun, toggleExclusion, retryRun, sendFollowup, copyReport, renderAll } =
+const { state, review, selectRun, loadRuns, signOut, cancelRun, toggleExclusion, retryRun, sendFollowup, copyReport, renderAll } =
   main.__test;
 
 async function settle(): Promise<void> {
@@ -268,4 +269,288 @@ test('stubRun keeps a completed run selected without opening a stream', async ()
   await selectRun('runA');
   assert.equal(state.run?.runId, 'runA');
   assert.equal(state.streamState, 'idle');
+});
+
+/* ---------------- review workbench session isolation ---------------- */
+
+const REVIEW_PROGRESS = { total: 1, reviewed: 0, draft: 0, unreviewed: 1 };
+
+function reviewItem(caseId: string): ReviewQueueItem {
+  return {
+    caseId,
+    title: `案例 ${caseId}`,
+    question: '这是问题吗？',
+    badge: '合成练习 · 示例回答 · 待你判断',
+    kind: 'practice',
+    status: 'unreviewed',
+    latestStatus: null,
+    latestRevision: 0,
+    sourceCount: 1,
+    claimCount: 1,
+    createdAt: '2026-03-02T00:00:00.000Z',
+    updatedAt: '2026-03-02T00:00:00.000Z'
+  };
+}
+
+function reviewDetail(caseId: string): ReviewCaseDetail {
+  return {
+    caseId,
+    datasetVersion: 'behavior-v1',
+    split: 'discovery',
+    kind: 'practice',
+    title: `案例 ${caseId}`,
+    question: '这是问题吗？',
+    asOf: '2026-03-02',
+    badge: '合成练习 · 示例回答 · 待你判断',
+    rubricVersion: 1,
+    contentHash: 'a'.repeat(64),
+    createdAt: '2026-03-02T00:00:00.000Z',
+    updatedAt: '2026-03-02T00:00:00.000Z',
+    status: 'unreviewed',
+    latestRevision: 0,
+    latestStatus: null,
+    sources: [{ sourceId: 'S1', title: '证据', text: '正文', locator: null }],
+    candidates: [
+      { blindLabel: 'A', claims: [{ claimId: 'K1', text: '候选甲' }] },
+      { blindLabel: 'B', claims: [{ claimId: 'K2', text: '候选乙' }] }
+    ],
+    claimIds: ['K1', 'K2'],
+    provenance: null
+  };
+}
+
+function reviewRoutes(prefix: string, extra?: (url: string) => Response | null): (url: string) => Response {
+  return (url: string) => {
+    if (url.includes('/api/review/cases?') || url.endsWith('/api/review/cases')) {
+      return jsonResponse({ cases: [reviewItem(`${prefix}case`)], progress: REVIEW_PROGRESS });
+    }
+    if (url.includes(`/api/review/cases/${prefix}case/history`)) {
+      return jsonResponse({ history: [], revisions: [] });
+    }
+    if (url.includes(`/api/review/cases/${prefix}case`)) {
+      return jsonResponse({ case: reviewDetail(`${prefix}case`), annotation: null, history: [] });
+    }
+    const other = extra?.(url);
+    if (other) return other;
+    return jsonResponse({});
+  };
+}
+
+test('sign-out clears the previous account review queue and case', async () => {
+  await freshUser('review-A');
+  review.reset();
+  route = reviewRoutes('a');
+  await review.open('acase');
+  assert.equal(review.state.caseId, 'acase');
+  assert.equal(env.document.querySelector('#view-review .review-case') !== null, true);
+
+  await signOut();
+  assert.equal(state.user, null);
+  assert.equal(review.state.caseId, null);
+  assert.equal(review.state.detail, null);
+  assert.equal(review.state.queue.length, 0);
+  assert.equal(env.document.querySelector('#view-review .review-case'), null);
+
+  await freshUser('review-B');
+  route = reviewRoutes('b');
+  await review.open();
+  assert.equal(review.state.caseId, 'bcase');
+  assert.match(env.document.querySelector('#view-review')?.textContent ?? '', /案例 bcase/);
+});
+
+test('a late review load cannot repopulate state after account reset', async () => {
+  await freshUser('review-C');
+  review.reset();
+  const gate = deferred<void>();
+  route = (url: string) => {
+    if (url.endsWith('/api/review/cases')) {
+      return jsonResponse({ cases: [reviewItem('ccase')], progress: REVIEW_PROGRESS });
+    }
+    if (url.includes('/api/review/cases/ccase')) {
+      return gate.promise.then(() =>
+        jsonResponse({ case: reviewDetail('ccase'), annotation: null, history: [] })
+      );
+    }
+    return jsonResponse({});
+  };
+  const pending = review.open('ccase');
+  await settle();
+  review.reset();
+  gate.resolve();
+  await pending;
+  assert.equal(review.state.caseId, null);
+  assert.equal(review.state.detail, null);
+  assert.equal(env.document.querySelector('#view-review .review-case'), null);
+});
+
+test('a failed sign-out preserves review state and unsaved work', async () => {
+  await freshUser('review-D');
+  review.reset();
+  route = reviewRoutes('d', (url) => {
+    if (url.includes('/api/auth/sign-out')) return jsonResponse({ message: 'nope' }, 500);
+    return null;
+  });
+  await review.open('dcase');
+  assert.equal(review.state.caseId, 'dcase');
+  review.state.dirty = true;
+
+  await signOut();
+  assert.equal(state.user?.id, 'review-D');
+  assert.equal(review.state.caseId, 'dcase');
+  assert.equal(review.state.dirty, true);
+});
+
+test('a malformed encoded review hash does not throw or leak state', async () => {
+  await freshUser('review-E');
+  review.reset();
+  route = () =>
+    jsonResponse({ cases: [], progress: { total: 0, reviewed: 0, draft: 0, unreviewed: 0 } });
+  env.window.location.hash = '#/review/%E0%A4%A';
+  await settle();
+  assert.equal(review.state.caseId, null);
+  assert.equal(review.state.queue.length, 0);
+});
+
+test('in-app navigation away from a dirty review asks and can be declined', async () => {
+  await freshUser('review-H');
+  review.reset();
+  route = reviewRoutes('h');
+  env.window.location.hash = '#/review/hcase';
+  await settle();
+  assert.equal(review.state.caseId, 'hcase');
+  review.state.dirty = true;
+
+  const originalConfirm = env.window.confirm;
+  let asked = 0;
+  env.window.confirm = () => {
+    asked += 1;
+    return false;
+  };
+  try {
+    const before = env.window.location.hash;
+    env.window.location.hash = '#/app';
+    await settle();
+    assert.equal(asked, 1);
+    assert.equal(env.window.location.hash, before);
+    assert.equal(review.state.caseId, 'hcase');
+    assert.equal(review.state.dirty, true);
+  } finally {
+    env.window.confirm = originalConfirm;
+  }
+});
+
+test('a stale 401 after account reset does not open sign-in for the new user', async () => {
+  await freshUser('review-I');
+  review.reset();
+  const gate = deferred<Response>();
+  route = (url: string) => {
+    if (url.endsWith('/api/review/cases')) {
+      return jsonResponse({ cases: [reviewItem('icase')], progress: REVIEW_PROGRESS });
+    }
+    if (url.includes('/api/review/cases/icase')) return gate.promise;
+    return jsonResponse({});
+  };
+  const pending = review.open('icase');
+  await settle();
+  review.reset();
+  await freshUser('review-J');
+
+  const dialog = env.document.getElementById('auth-dialog');
+  gate.resolve(jsonResponse({ error: { code: 'unauthorized', message: '请先登录。' } }, 401));
+  await pending;
+  await settle();
+  assert.equal(review.state.caseId, null);
+  assert.notEqual(dialog?.hasAttribute('open'), true);
+});
+
+test('an expired review session clears the previous account research state', async () => {
+  await freshUser('review-K');
+  review.reset();
+  state.run = makeView('privateA');
+  state.activeRunId = 'privateA';
+  state.runs = [
+    {
+      runId: 'privateA',
+      question: '问题 privateA',
+      state: 'completed',
+      provider: 'github',
+      revision: 1,
+      createdAt: '',
+      updatedAt: '',
+      sourceCount: 1,
+      reviewCount: 0
+    }
+  ];
+  state.messages = [{ role: 'user', label: '你', text: 'A 的追问' }];
+  renderAll();
+
+  route = (url: string) => {
+    if (url.endsWith('/api/review/cases')) return jsonResponse({ error: { code: 'unauthorized' } }, 401);
+    return jsonResponse({});
+  };
+  await review.open(null);
+  await settle();
+
+  assert.equal(state.run, null);
+  assert.equal(state.activeRunId, null);
+  assert.deepEqual(state.runs, []);
+  assert.deepEqual(state.messages, []);
+  const appText = env.document.getElementById('view-app')?.textContent ?? '';
+  assert.doesNotMatch(appText, /privateA/);
+  assert.doesNotMatch(appText, /A 的追问/);
+  assert.equal(env.document.getElementById('auth-dialog')?.hasAttribute('open'), true);
+});
+
+test('a direct auth-form account switch clears the previous research DOM immediately', async () => {
+  await freshUser('review-L');
+  const privateInputs = ['research-question', 'profile-url', 'chat-input', 'resume-seed'];
+  for (const id of privateInputs) {
+    (env.document.getElementById(id) as HTMLInputElement).value = `privateL unsent ${id}`;
+  }
+  state.run = makeView('privateL');
+  state.activeRunId = 'privateL';
+  state.runs = [
+    {
+      runId: 'privateL',
+      question: '问题 privateL',
+      state: 'completed',
+      provider: 'github',
+      revision: 1,
+      createdAt: '',
+      updatedAt: '',
+      sourceCount: 1,
+      reviewCount: 0
+    }
+  ];
+  renderAll();
+  assert.match(env.document.getElementById('view-app')?.textContent ?? '', /privateL/);
+
+  const runsGate = deferred<void>();
+  route = (url: string) => {
+    if (url.includes('/api/auth/sign-in/email')) {
+      return jsonResponse({ user: { id: 'review-M', email: 'm@example.test', name: 'review-M' } });
+    }
+    if (url.endsWith('/api/runs')) {
+      return runsGate.promise.then(() => jsonResponse({ runs: [] }));
+    }
+    return jsonResponse({});
+  };
+  env.document.getElementById('open-auth')!.click();
+  const email = env.document.getElementById('auth-email') as HTMLInputElement;
+  const password = env.document.getElementById('auth-password') as HTMLInputElement;
+  email.value = 'm@example.test';
+  password.value = 'password-1234';
+  const form = env.document.getElementById('auth-form') as HTMLFormElement;
+  form.dispatchEvent(new env.window.Event('submit', { bubbles: true, cancelable: true }));
+  await settle();
+
+  // Runs list is still pending, but the previous account's DOM must be gone.
+  assert.equal(state.user?.id, 'review-M');
+  const appText = env.document.getElementById('view-app')?.textContent ?? '';
+  assert.doesNotMatch(appText, /privateL/);
+  for (const id of privateInputs) {
+    assert.equal((env.document.getElementById(id) as HTMLInputElement).value, '', `${id} must clear on identity switch`);
+  }
+  runsGate.resolve();
+  await settle();
 });

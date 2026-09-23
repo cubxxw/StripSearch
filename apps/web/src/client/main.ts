@@ -9,6 +9,7 @@ import {
 import { ApiClient, ApiError } from './api.js';
 import { createAuthController, renderUserNav, showToast } from './auth.js';
 import { byId, clear, make, setText, show } from './dom.js';
+import { createReviewWorkbench } from './review.js';
 import {
   renderActivity,
   renderFollowupRail,
@@ -137,8 +138,64 @@ const els = {
   drawerSourceList: byId('drawer-source-list'),
   drawerSourceDetail: byId('drawer-source-detail'),
   sourceDrawer: byId<HTMLDialogElement>('source-drawer'),
-  historyDrawer: byId<HTMLDialogElement>('history-drawer')
+  historyDrawer: byId<HTMLDialogElement>('history-drawer'),
+  review: byId('view-review'),
+  openReview: byId<HTMLButtonElement>('open-review')
 };
+
+const review = createReviewWorkbench({
+  api,
+  root: els.review,
+  onToast: showToast,
+  onUnauthorized: handleReviewUnauthorized,
+  onNavigate: (caseId) => {
+    const target = caseId ? `#/review/${encodeURIComponent(caseId)}` : '#/review';
+    if (window.location.hash !== target) window.location.hash = target;
+  }
+});
+
+/**
+ * Drop every piece of owner-private state (research run, stream, messages and
+ * review workbench) so an expired session or an account switch can never show
+ * one account's data to another.
+ */
+function clearPrivateState(): void {
+  state.user = null;
+  state.runs = [];
+  state.run = null;
+  state.activeRunId = null;
+  state.events = [];
+  state.messages = [];
+  state.selectedSourceKey = null;
+  state.stages = [];
+  state.latestSeq = 0;
+  state.pendingSubmit = false;
+  // Unsent input is private too; renderAll only clears rendered run content.
+  els.question.value = '';
+  els.profile.value = '';
+  els.chatInput.value = '';
+  els.resumeSeed.value = '';
+  els.clearQuestion.hidden = true;
+  setText(els.questionError, '');
+  setText(els.profileError, '');
+  setText(els.resumeError, '');
+  setFormStatus('');
+  state.runEpoch += 1;
+  closeStream();
+  review.reset();
+  renderUserNav(null);
+  // Render the cleared DOM synchronously so an identity switch can never
+  // flash the previous account's research while its run list is pending.
+  renderAll();
+}
+
+/** A review request returning 401 means the session ended; drop all private state. */
+function handleReviewUnauthorized(): void {
+  clearPrivateState();
+  showToast('登录已失效，请重新登录。', 'error');
+  if (window.location.hash !== '#/') window.location.hash = '#/';
+  auth.open('signin', handleAuthSuccess);
+}
 
 function isCurrentUser(userId: string | null | undefined): boolean {
   return (state.user?.id ?? null) === (userId ?? null);
@@ -155,18 +212,34 @@ function isNarrow(): boolean {
 /* ---------------- routing ---------------- */
 
 function route(): void {
-  const wantsApp = window.location.hash.startsWith('#/app');
-  if (wantsApp && !state.user) {
+  const hash = window.location.hash;
+  const wantsApp = hash.startsWith('#/app');
+  const reviewMatch = hash.match(/^#\/review(?:\/([^/?#]+))?/);
+  const wantsReview = Boolean(reviewMatch);
+  if ((wantsApp || wantsReview) && !state.user) {
     window.location.hash = '#/';
     auth.open('signin', (user) => {
       handleAuthSuccess(user);
-      window.location.hash = '#/app';
+      window.location.hash = wantsReview ? '#/review' : '#/app';
     });
     return;
   }
-  els.home.hidden = wantsApp;
+  els.home.hidden = wantsApp || wantsReview;
   els.app.hidden = !wantsApp;
-  els.footer.hidden = wantsApp;
+  els.review.hidden = !wantsReview;
+  els.footer.hidden = wantsApp || wantsReview;
+  if (wantsReview) {
+    let caseId: string | null = null;
+    if (reviewMatch?.[1]) {
+      try {
+        caseId = decodeURIComponent(reviewMatch[1]);
+      } catch {
+        caseId = null;
+      }
+    }
+    void review.open(caseId);
+    return;
+  }
   if (wantsApp && state.user && !state.activeRunId && state.runs.length > 0) {
     void selectRun(state.runs[0]!.runId);
   }
@@ -265,16 +338,28 @@ async function submitResearch(): Promise<void> {
 }
 
 function handleAuthSuccess(user: SessionUser): void {
+  const previousUserId = state.user?.id ?? null;
+  if (previousUserId !== null && previousUserId !== user.id) {
+    // Identity switch: never carry the previous account's private state over.
+    clearPrivateState();
+  }
   state.user = user;
   // Invalidate anything queued for a previous session.
   state.runEpoch += 1;
   renderUserNav(user);
   void loadRuns();
   if (state.pendingSubmit) state.pendingSubmit = false;
+  route();
 }
 
 async function signOut(): Promise<void> {
   if (state.signOutBusy) return;
+  if (
+    review.hasUnsavedChanges() &&
+    !window.confirm('标注有未保存的修改，退出将丢失这些修改。确定退出吗？')
+  ) {
+    return;
+  }
   state.signOutBusy = true;
   try {
     await api.signOut();
@@ -285,14 +370,7 @@ async function signOut(): Promise<void> {
     state.signOutBusy = false;
   }
   // Only clear local state after the server confirms the session ended.
-  state.user = null;
-  state.runs = [];
-  state.run = null;
-  state.activeRunId = null;
-  state.runEpoch += 1;
-  closeStream();
-  renderUserNav(null);
-  renderAll();
+  clearPrivateState();
   setFormStatus('已退出登录。');
   goHome();
 }
@@ -961,7 +1039,7 @@ async function resumeRun(): Promise<void> {
 /* ---------------- wiring ---------------- */
 
 function wire(): void {
-  window.addEventListener('hashchange', route);
+  window.addEventListener('hashchange', onHashChange);
 
   els.form.addEventListener('submit', (event) => {
     event.preventDefault();
@@ -995,6 +1073,13 @@ function wire(): void {
   byId<HTMLButtonElement>('open-example-2').addEventListener('click', fillExample);
 
   byId<HTMLButtonElement>('open-auth').addEventListener('click', () => auth.open('signin', handleAuthSuccess));
+  els.openReview.addEventListener('click', () => {
+    if (window.location.hash === '#/review') {
+      void review.refresh();
+    } else {
+      window.location.hash = '#/review';
+    }
+  });
   byId<HTMLButtonElement>('sign-out').addEventListener('click', () => void signOut());
   byId<HTMLButtonElement>('open-app').addEventListener('click', () => {
     window.location.hash = '#/app';
@@ -1065,6 +1150,34 @@ function wire(): void {
 
 /* ---------------- boot ---------------- */
 
+let lastHash = window.location.hash;
+let suppressHashGuard = false;
+
+/**
+ * Guard in-app hash/back navigation away from a case with unsaved review or
+ * new-case input. A confirmed navigation proceeds; a declined one restores the
+ * previous hash without reloading the workbench.
+ */
+function onHashChange(): void {
+  const next = window.location.hash;
+  if (next === lastHash) {
+    suppressHashGuard = false;
+    route();
+    return;
+  }
+  const inReview = (hash: string): boolean => hash.startsWith('#/review');
+  if (inReview(lastHash) && lastHash !== next && !suppressHashGuard && review.hasUnsavedChanges()) {
+    if (!window.confirm('标注有未保存的修改，确定要离开当前案例吗？')) {
+      suppressHashGuard = true;
+      window.location.hash = lastHash;
+      return;
+    }
+  }
+  suppressHashGuard = false;
+  lastHash = next;
+  route();
+}
+
 async function boot(): Promise<void> {
   wire();
   renderUserNav(null);
@@ -1096,6 +1209,7 @@ void boot();
 /** Exposed only for DOM regression tests; not part of the app surface. */
 export const __test = {
   state,
+  review,
   selectRun,
   loadRuns,
   signOut,

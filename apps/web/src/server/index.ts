@@ -11,6 +11,7 @@ import type { AppConfig } from './config.js';
 import { openDatabase } from './db/index.js';
 import { migrateDatabase } from './db/migrate.js';
 import { Runner } from './services/runner.js';
+import { ReviewStore } from './review-store.js';
 import { Store } from './store.js';
 import type { DB } from './db/index.js';
 
@@ -24,6 +25,7 @@ export interface BootstrappedApp {
   config: AppConfig;
   db: DB;
   store: Store;
+  reviewStore: ReviewStore;
   runner: Runner;
   app: ReturnType<typeof createApp>;
   interrupted: number;
@@ -38,6 +40,7 @@ export async function bootstrap(
   const auth = createAuth(db, config);
   await migrateDatabase(db, auth);
   const store = new Store(db);
+  const reviewStore = new ReviewStore(db);
   const interrupted = store.recoverInterruptedRuns();
   const providerFactory: ProviderFactory =
     overrides.providerFactory ??
@@ -49,8 +52,8 @@ export async function bootstrap(
     transport: overrides.transport ?? defaultTransport
   });
   const clientDir = overrides.clientDir ?? defaultClientDir();
-  const app = createApp({ config, store, auth, runner, clientDir });
-  return { config, db, store, runner, app, interrupted };
+  const app = createApp({ config, store, reviewStore, auth, runner, clientDir });
+  return { config, db, store, reviewStore, runner, app, interrupted };
 }
 
 function isMain(): boolean {
