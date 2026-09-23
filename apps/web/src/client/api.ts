@@ -14,6 +14,7 @@ import type {
   ReviewProgress,
   ReviewQueueItem
 } from '../shared/review.js';
+import type { ResearchTaskInput, ResearchTaskListItem, ResearchTaskView } from '../shared/research-task.js';
 
 export class ApiError extends Error {
   constructor(
@@ -306,5 +307,33 @@ export class ApiClient {
     );
     if (!response.ok) throw new ApiError(response.status, 'export_failed', '导出失败。');
     return response.text();
+  }
+
+  /* ------------- candidate-free research task library ------------- */
+
+  async listResearchTasks(): Promise<{ tasks: ResearchTaskListItem[]; note: string }> {
+    const data = await this.request<{ tasks?: ResearchTaskListItem[]; note?: string }>(
+      '/api/review/research-tasks'
+    );
+    return { tasks: data.tasks ?? [], note: data.note ?? '' };
+  }
+
+  async createResearchTask(
+    input: ResearchTaskInput
+  ): Promise<{ task: ResearchTaskView; created: boolean }> {
+    const data = await this.request<{ task?: ResearchTaskView; created?: boolean }>(
+      '/api/review/research-tasks',
+      { method: 'POST', body: JSON.stringify(input) }
+    );
+    if (!data.task) throw new ApiError(500, 'invalid_response', '服务器响应缺少研究任务数据。');
+    return { task: data.task, created: Boolean(data.created) };
+  }
+
+  async getResearchTask(taskId: string): Promise<ResearchTaskView> {
+    const data = await this.request<{ task?: ResearchTaskView }>(
+      `/api/review/research-tasks/${encodeURIComponent(taskId)}`
+    );
+    if (!data.task) throw new ApiError(404, 'research_task_not_found', '未找到该研究任务。');
+    return data.task;
   }
 }
