@@ -10,6 +10,12 @@ import {
   REASON_TAG_ORDER,
   validateAnnotationShape
 } from '../shared/review.js';
+import { researchModelInput, researchSpecExport } from '../shared/research-task.js';
+import type {
+  ResearchTaskInput,
+  ResearchTaskListItem,
+  ResearchTaskView
+} from '../shared/research-task.js';
 import type {
   ClaimLabel,
   Preference,
@@ -60,6 +66,9 @@ export interface ReviewApi {
   deleteReviewCase(caseId: string): Promise<void>;
   getReviewInsights(): Promise<ReviewInsights>;
   exportReview(format: 'json' | 'jsonl', filter: 'all' | 'reviewed'): Promise<string>;
+  listResearchTasks(): Promise<{ tasks: ResearchTaskListItem[]; note: string }>;
+  getResearchTask(taskId: string): Promise<ResearchTaskView>;
+  createResearchTask(input: ResearchTaskInput): Promise<{ task: ResearchTaskView; created: boolean }>;
 }
 
 export interface ReviewWorkbenchDeps {
@@ -103,6 +112,14 @@ export interface ReviewWorkbenchState {
   busy: boolean;
   dirty: boolean;
   newCaseBusy: boolean;
+  /** Candidate-free research task library (separate from answer pairs). */
+  researchTasks: ResearchTaskListItem[];
+  researchNote: string;
+  researchLoaded: boolean;
+  researchTaskId: string | null;
+  researchDetail: ResearchTaskView | null;
+  researchLoading: boolean;
+  researchImportBusy: boolean;
 }
 
 export interface ReviewWorkbench {
@@ -169,13 +186,22 @@ export function createReviewWorkbench(deps: ReviewWorkbenchDeps): ReviewWorkbenc
     insightsOpen: false,
     busy: false,
     dirty: false,
-    newCaseBusy: false
+    newCaseBusy: false,
+    researchTasks: [],
+    researchNote: '',
+    researchLoaded: false,
+    researchTaskId: null,
+    researchDetail: null,
+    researchLoading: false,
+    researchImportBusy: false
   };
 
   let mounted = false;
   let queueLoaded = false;
   let queueToken = 0;
   let loadToken = 0;
+  let researchListToken = 0;
+  let researchTaskToken = 0;
   let sessionGeneration = 0;
   let editGeneration = 0;
   let busyGeneration = 0;
@@ -206,6 +232,14 @@ export function createReviewWorkbench(deps: ReviewWorkbenchDeps): ReviewWorkbenc
     dialogSubmit: HTMLButtonElement;
     sourceRows: HTMLElement;
     exportFilter: HTMLSelectElement;
+    researchSection: HTMLElement;
+    researchQueue: HTMLElement;
+    researchDetail: HTMLElement;
+    researchNote: HTMLElement;
+    researchImportDialog: HTMLDialogElement;
+    researchImportError: HTMLElement;
+    researchImportSubmit: HTMLButtonElement;
+    researchImportTextarea: HTMLTextAreaElement;
   } = {} as never;
 
   function setStatus(message: string): void {
@@ -250,17 +284,17 @@ export function createReviewWorkbench(deps: ReviewWorkbenchDeps): ReviewWorkbenc
 
     const head = make('header', { className: 'review-head container' });
     const headText = make('div', { className: 'review-head-text' });
-    headText.appendChild(make('h1', { text: '标注工作台' }));
+    headText.appendChild(make('h1', { text: '评估工作台' }));
     headText.appendChild(
       make('p', {
         className: 'review-subtitle',
-        text: '人工标签工作台 · 先判断证据与论断，再盲选偏好'
+        text: '先准备研究案例，再评审研究结果。'
       })
     );
     headText.appendChild(
       make('p', {
         className: 'helper',
-        text: '先读材料，再判断每条结论。保存草稿后可稍后继续。'
+        text: '从完整人物研究开始，结合具体作品和互动来判断。'
       })
     );
     const headActions = make('div', { className: 'review-head-actions' });
@@ -307,14 +341,8 @@ export function createReviewWorkbench(deps: ReviewWorkbenchDeps): ReviewWorkbenc
       })
     );
     head.appendChild(headText);
-    head.appendChild(headActions);
+
     shell.appendChild(head);
-    shell.appendChild(
-      make('p', {
-        className: 'helper container',
-        text: '导出包含回答来源和判断历史；草稿与已提交记录分开标记。'
-      })
-    );
 
     const status = make('p', {
       className: 'review-status container',
@@ -327,6 +355,22 @@ export function createReviewWorkbench(deps: ReviewWorkbenchDeps): ReviewWorkbenc
       attrs: { role: 'alert', 'aria-live': 'assertive', tabindex: '-1', 'data-role': 'error' }
     });
     shell.appendChild(error);
+
+    // Candidate-free research task library first, the legacy answer-pair work
+    // grouped under its own label below it.
+    const research = buildResearchSection();
+    shell.appendChild(research.element);
+    const answerHead = make('div', { className: 'review-section-head container' });
+    answerHead.appendChild(make('h2', { text: '回答对照评审（两候选）' }));
+    answerHead.appendChild(
+      make('p', {
+        className: 'helper',
+        text: '已有两份研究回答时，在这里核查证据并比较质量。'
+      })
+    );
+    answerHead.appendChild(headActions);
+    answerHead.appendChild(make('p', { className: 'helper', text: '这里的导出包含回答来源和判断历史；草稿与已提交记录分开标记。' }));
+    shell.appendChild(answerHead);
 
     const body = make('div', { className: 'review-body container' });
     const queuePanel = make('section', {
@@ -391,6 +435,8 @@ export function createReviewWorkbench(deps: ReviewWorkbenchDeps): ReviewWorkbenc
 
     const dialog = buildNewCaseDialog();
     shell.appendChild(dialog.element);
+    const researchDialog = buildResearchImportDialog();
+    shell.appendChild(researchDialog.element);
 
     deps.root.appendChild(shell);
 
@@ -407,6 +453,14 @@ export function createReviewWorkbench(deps: ReviewWorkbenchDeps): ReviewWorkbenc
     refs.dialogSubmit = dialog.submit;
     refs.sourceRows = dialog.sourceRows;
     refs.exportFilter = exportFilter;
+    refs.researchSection = research.element;
+    refs.researchQueue = research.queue;
+    refs.researchDetail = research.detail;
+    refs.researchNote = research.note;
+    refs.researchImportDialog = researchDialog.element;
+    refs.researchImportError = researchDialog.error;
+    refs.researchImportSubmit = researchDialog.submit;
+    refs.researchImportTextarea = researchDialog.textarea;
 
     search.addEventListener('input', () => {
       state.search = search.value;
@@ -432,7 +486,7 @@ export function createReviewWorkbench(deps: ReviewWorkbenchDeps): ReviewWorkbenc
       window.addEventListener('beforeunload', beforeUnload);
     }
 
-    wireDelegatedEvents(shell, dialog);
+    wireDelegatedEvents(shell, dialog, researchDialog);
     renderAll();
   }
 
@@ -580,9 +634,137 @@ export function createReviewWorkbench(deps: ReviewWorkbenchDeps): ReviewWorkbenc
     container.appendChild(row);
   }
 
+  /* ---------------- research task library (candidate-free) ---------------- */
+
+  interface ResearchSection {
+    element: HTMLElement;
+    queue: HTMLElement;
+    detail: HTMLElement;
+    note: HTMLElement;
+  }
+
+  function buildResearchSection(): ResearchSection {
+    const element = make('section', {
+      className: 'review-research container',
+      attrs: { 'aria-label': '综合人物研究案例', 'data-role': 'research-library' }
+    });
+    const head = make('div', { className: 'review-research-head' });
+    const headText = make('div', { className: 'review-research-head-text' });
+    headText.appendChild(make('h2', { text: '综合人物研究案例' }));
+    headText.appendChild(
+      make('p', {
+        className: 'helper',
+        text: '围绕一个人做综合细致的研究。以下是待运行案例和拟定标准，还没有模型回答或人工评分。'
+      })
+    );
+    const note = make('p', { className: 'review-research-note', attrs: { 'data-role': 'research-note' } });
+    headText.appendChild(note);
+    head.appendChild(headText);
+    const actions = make('div', { className: 'review-research-actions' });
+    actions.appendChild(
+      make('button', {
+        className: 'button primary',
+        text: '导入研究案例',
+        attrs: { type: 'button', 'data-action': 'research-import' }
+      })
+    );
+    actions.appendChild(
+      make('button', {
+        className: 'button',
+        text: '刷新列表',
+        attrs: { type: 'button', 'data-action': 'research-refresh' }
+      })
+    );
+    head.appendChild(actions);
+    element.appendChild(head);
+
+    const layout = make('div', { className: 'review-research-layout' });
+    const queue = make('ul', {
+      className: 'review-research-queue',
+      attrs: { 'data-role': 'research-queue', 'aria-label': '研究案例列表' }
+    });
+    const detail = make('div', {
+      className: 'review-research-detail',
+      attrs: { 'data-role': 'research-detail', 'aria-label': '研究案例详情' }
+    });
+    layout.appendChild(queue);
+    layout.appendChild(detail);
+    element.appendChild(layout);
+    return { element, queue, detail, note };
+  }
+
+  interface ResearchImportDialog {
+    element: HTMLDialogElement;
+    error: HTMLElement;
+    submit: HTMLButtonElement;
+    form: HTMLFormElement;
+    textarea: HTMLTextAreaElement;
+    file: HTMLInputElement;
+  }
+
+  function buildResearchImportDialog(): ResearchImportDialog {
+    const element = make('dialog', {
+      className: 'modal review-import-modal',
+      attrs: { 'aria-label': '导入研究案例' }
+    }) as HTMLDialogElement;
+    const form = make('form', { className: 'review-import-form' });
+    form.appendChild(make('h2', { text: '导入研究案例' }));
+    form.appendChild(
+      make('p', {
+        className: 'helper',
+        text: '选择案例 JSON 文件，或粘贴一个案例或一组案例。重复导入相同内容不会新增记录。'
+      })
+    );
+
+    const file = make('input', {
+      attrs: { type: 'file', accept: '.json,application/json', 'data-field': 'research-file' }
+    }) as HTMLInputElement;
+    form.appendChild(field('JSON 文件（可选，读入下方）', file));
+
+    const textarea = make('textarea', {
+      attrs: { rows: '10', 'data-field': 'research-json', 'aria-label': '研究案例 JSON' }
+    }) as HTMLTextAreaElement;
+    form.appendChild(field('JSON 内容', textarea));
+
+    file.addEventListener('change', () => {
+      const selected = file.files?.[0];
+      if (!selected) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        textarea.value = String(reader.result ?? '');
+      };
+      reader.readAsText(selected);
+    });
+
+    const error = make('p', {
+      className: 'error-text',
+      attrs: { role: 'alert', 'data-role': 'research-import-error' }
+    });
+    form.appendChild(error);
+    const submit = make('button', {
+      className: 'button primary',
+      text: '导入',
+      attrs: { type: 'submit' }
+    }) as HTMLButtonElement;
+    form.appendChild(submit);
+    form.appendChild(
+      make('button', {
+        className: 'button ghost',
+        text: '取消',
+        attrs: { type: 'button', 'data-action': 'close-research-import' }
+      })
+    );
+    element.appendChild(form);
+    return { element, error, submit, form, textarea, file };
+  }
+
   /* ---------------- delegated events ---------------- */
 
-  function wireDelegatedEvents(shell: HTMLElement, dialog: NewCaseDialog): void {
+  function wireDelegatedEvents(
+    shell: HTMLElement,
+    dialog: NewCaseDialog,
+    researchDialog: ResearchImportDialog
+  ): void {
     shell.addEventListener('click', (event) => {
       const target = event.target as HTMLElement | null;
       if (!target) return;
@@ -602,6 +784,15 @@ export function createReviewWorkbench(deps: ReviewWorkbenchDeps): ReviewWorkbenc
         }
         else if (action === 'seed') void seedPractice();
         else if (action === 'new-case') openNewCaseDialog();
+        else if (action === 'research-import') openResearchImport();
+        else if (action === 'research-refresh') void refreshResearch({ force: true });
+        else if (action === 'close-research-import') {
+          if (state.researchImportBusy) return;
+          if (!researchImportHasContent() || window.confirm('导入内容尚未提交，关闭会丢失已填写内容。确定关闭吗？')) {
+            researchDialog.element.close();
+          }
+        } else if (action === 'export-model-input') exportResearchModelInput();
+        else if (action === 'export-spec') exportResearchSpec();
         else if (action === 'insights') void toggleInsights();
         else if (action === 'export-json') void exportData('json');
         else if (action === 'export-jsonl') void exportData('jsonl');
@@ -621,6 +812,19 @@ export function createReviewWorkbench(deps: ReviewWorkbenchDeps): ReviewWorkbenc
       const queueItem = target.closest<HTMLElement>('[data-case-id]');
       if (queueItem?.dataset.caseId && queueItem.classList.contains('review-queue-item')) {
         if (queueItem.dataset.caseId !== state.caseId) navigateTo(queueItem.dataset.caseId);
+        return;
+      }
+      const researchItem = target.closest<HTMLElement>('[data-research-task-id]');
+      if (
+        researchItem?.dataset.researchTaskId &&
+        researchItem.classList.contains('review-research-item')
+      ) {
+        if (
+          researchItem.dataset.researchTaskId !== state.researchTaskId ||
+          (!state.researchLoading && !state.researchDetail)
+        ) {
+          void selectResearchTask(researchItem.dataset.researchTaskId);
+        }
       }
     });
 
@@ -695,6 +899,19 @@ export function createReviewWorkbench(deps: ReviewWorkbenchDeps): ReviewWorkbenc
       event.preventDefault();
       void submitNewCase();
     });
+    researchDialog.form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      void importResearchTasks(researchDialog);
+    });
+    researchDialog.element.addEventListener('cancel', (event) => {
+      if (state.researchImportBusy) {
+        event.preventDefault();
+        return;
+      }
+      if (researchImportHasContent() && !window.confirm('导入内容尚未提交，关闭会丢失已填写内容。确定关闭吗？')) {
+        event.preventDefault();
+      }
+    });
     dialog.element.addEventListener('cancel', (event) => {
       if (state.newCaseBusy) {
         event.preventDefault();
@@ -744,6 +961,7 @@ export function createReviewWorkbench(deps: ReviewWorkbenchDeps): ReviewWorkbenc
   function renderAll(): void {
     renderQueue();
     renderEditor();
+    renderResearch();
   }
 
   function renderQueue(): void {
@@ -791,6 +1009,234 @@ export function createReviewWorkbench(deps: ReviewWorkbenchDeps): ReviewWorkbenc
       li.appendChild(button);
       refs.queue.appendChild(li);
     }
+  }
+
+  /* ---------------- research task library rendering ---------------- */
+
+  function renderResearch(): void {
+    if (!mounted) return;
+    setText(refs.researchNote, state.researchNote);
+    renderResearchList();
+    renderResearchDetail();
+  }
+
+  function renderResearchList(): void {
+    const queue = refs.researchQueue;
+    if (!queue) return;
+    clear(queue);
+    if (state.researchTasks.length === 0) {
+      queue.appendChild(
+        make('li', {
+          className: 'review-empty',
+          text: '研究案例库为空。点击「导入研究案例」，粘贴 JSON 或选择文件导入任务规范。'
+        })
+      );
+      return;
+    }
+    for (const item of state.researchTasks) {
+      const li = make('li', {});
+      const button = make('button', {
+        className: 'review-research-item',
+        attrs: {
+          type: 'button',
+          'data-research-task-id': item.taskId,
+          'aria-current': item.taskId === state.researchTaskId ? 'true' : 'false'
+        }
+      });
+      button.appendChild(make('span', { className: 'review-queue-title', text: item.title }));
+      const meta = make('span', { className: 'review-queue-meta' });
+      meta.appendChild(
+        make('span', {
+          className: 'review-status-badge',
+          text: '待运行 · 未评审',
+          attrs: { 'data-status': 'unreviewed' }
+        })
+      );
+      meta.appendChild(make('span', { className: 'mono', text: '模型输出 0 条' }));
+      button.appendChild(meta);
+      li.appendChild(button);
+      queue.appendChild(li);
+    }
+  }
+
+  function researchBlock(title: string, helper?: string): { section: HTMLElement; body: HTMLElement } {
+    const section = make('section', { className: 'review-research-block' });
+    section.appendChild(make('h3', { text: title }));
+    if (helper) section.appendChild(make('p', { className: 'helper', text: helper }));
+    const body = make('div', { className: 'review-research-block-body' });
+    section.appendChild(body);
+    return { section, body };
+  }
+
+  function renderCheckList(checks: { id: string; focus: string; lookFor: string }[]): HTMLElement {
+    const list = make('ol', { className: 'review-check-list' });
+    for (const check of checks) {
+      const item = make('li', { className: 'review-check', attrs: { 'data-check-id': check.id } });
+      const head = make('div', { className: 'review-check-head' });
+      head.appendChild(make('strong', { text: check.focus }));
+      item.appendChild(head);
+      item.appendChild(make('p', { className: 'review-check-look', text: check.lookFor }));
+      list.appendChild(item);
+    }
+    return list;
+  }
+
+  function renderResearchDetail(): void {
+    const pane = refs.researchDetail;
+    if (!pane) return;
+    clear(pane);
+    if (state.researchLoading) {
+      pane.appendChild(make('p', { className: 'helper', text: '正在载入研究案例…' }));
+      return;
+    }
+    const task = state.researchDetail;
+    if (!task) {
+      pane.appendChild(
+        make('p', {
+          className: 'review-placeholder',
+          text:
+            state.researchTasks.length === 0
+              ? '还没有研究案例。导入的任务规范会在这里展示，不会触发任何模型运行。'
+              : '从左侧选择一个研究案例，查看问题、种子链接与评估检查。'
+        })
+      );
+      return;
+    }
+
+    const article = make('article', {
+      className: 'review-research-case',
+      attrs: { 'data-research-task-id': task.taskId }
+    });
+    const header = make('header', { className: 'review-case-head' });
+    const titleRow = make('div', { className: 'review-case-title-row' });
+    titleRow.appendChild(make('span', { className: 'review-badge', text: '研究任务规范 · 未运行' }));
+    titleRow.appendChild(
+      make('span', {
+        className: 'review-status-badge',
+        text: '待运行 · 未评审',
+        attrs: { 'data-status': 'unreviewed' }
+      })
+    );
+    header.appendChild(titleRow);
+    header.appendChild(make('h2', { text: task.title }));
+    header.appendChild(
+      make('p', {
+        className: 'helper',
+        text: '模型输出 0 条 · 人工判断尚未填写'
+      })
+    );
+    header.appendChild(
+      make('p', {
+        className: 'helper',
+        text: '先用下面的问题做研究；检查点留给评审使用，不放进研究提示词。'
+      })
+    );
+    article.appendChild(header);
+
+    const prompt = researchBlock('研究问题');
+    prompt.body.appendChild(make('p', { className: 'review-question', text: task.input.prompt }));
+    article.appendChild(prompt.section);
+
+    const seeds = researchBlock('身份参考主页');
+    const seedList = make('ul', { className: 'review-seed-links' });
+    for (const url of task.input.identitySeedUrls) {
+      const item = make('li', {});
+      // Only validated http(s) values become links; everything else is text.
+      if (/^https?:\/\//i.test(url)) {
+        item.appendChild(
+          make('a', {
+            text: url,
+            attrs: { href: url, target: '_blank', rel: 'noopener noreferrer nofollow' }
+          })
+        );
+      } else {
+        item.appendChild(make('span', { text: url }));
+      }
+      seedList.appendChild(item);
+    }
+    seeds.body.appendChild(seedList);
+    article.appendChild(seeds.section);
+
+    const common = researchBlock(
+      `共同评估检查（${task.commonChecks.length} 条）`,
+      '回答对照时逐条核对；未评审前不会自动打分。'
+    );
+    common.body.appendChild(renderCheckList(task.commonChecks));
+    const commonDetails = make('details', { className: 'review-research-common' });
+    commonDetails.appendChild(make('summary', { text: `共同评估检查（${task.commonChecks.length} 条）` }));
+    common.section.querySelector('h3')?.remove();
+    commonDetails.appendChild(common.section);
+
+    const person = researchBlock(
+      `人物评估检查（${task.personChecks.length} 条）`,
+      '结合此人的作品、表达和实际互动逐项核对。'
+    );
+    person.body.appendChild(renderCheckList(task.personChecks));
+    article.appendChild(person.section);
+    article.appendChild(commonDetails);
+
+    const observation = researchBlock('观察起点（暂定）', '这是选样起点，后续材料可以修正它。');
+    observation.body.appendChild(make('p', { text: task.observedStartingPoint }));
+    article.appendChild(observation.section);
+
+    const failure = researchBlock('常见失败', '评估时对照这条失败模式，而不是当作已发生的结论。');
+    failure.body.appendChild(make('p', { text: task.typicalFailure }));
+    article.appendChild(failure.section);
+
+    const gaps = researchBlock('材料缺口');
+    gaps.body.appendChild(make('p', { text: '完整人物资料尚未补齐；公开互动尚未系统抽样。材料不足的检查项需要单独记录，不能当作通过。' }));
+    article.appendChild(gaps.section);
+    const status = researchBlock('状态与版本信息');
+    const techList = make('dl', {});
+    const techPairs: [string, string][] = [
+      ['执行状态', '待运行（not_run）'],
+      ['评审状态', '未评审（unreviewed）'],
+      ['模型输出', '0 条（尚无运行）'],
+      ['人工判断', '空白（无自动勾选）'],
+      ['来源包状态', '不完整（incomplete）'],
+      ['交互样本', '未系统抽样（not_systematically_sampled）'],
+      ['分片', task.split],
+      ['任务 ID', task.taskId],
+      ['外部 ID', task.externalId],
+      ['内容哈希', task.contentHash],
+      ['创建时间', formatDateTime(task.createdAt)]
+    ];
+    for (const [key, value] of techPairs) {
+      const group = make('div', {});
+      group.appendChild(make('dt', { text: key }));
+      group.appendChild(make('dd', { className: 'mono', text: value }));
+      techList.appendChild(group);
+    }
+    status.body.appendChild(techList);
+    const records = make('details', { className: 'review-research-records' });
+    records.appendChild(make('summary', { text: '查看状态与版本记录' }));
+    records.appendChild(status.section);
+    article.appendChild(records);
+
+    const actions = make('footer', { className: 'review-editor-actions' });
+    actions.appendChild(
+      make('button', {
+        className: 'button primary',
+        text: '导出研究输入',
+        attrs: { type: 'button', 'data-action': 'export-model-input' }
+      })
+    );
+    actions.appendChild(
+      make('button', {
+        className: 'button',
+        text: '导出评审标准',
+        attrs: { type: 'button', 'data-action': 'export-spec' }
+      })
+    );
+    actions.appendChild(
+      make('p', {
+        className: 'helper',
+        text: '模型输入只含 case ID、问题与种子链接，不含任何评估检查；完整规范仅供评估方使用。'
+      })
+    );
+    article.insertBefore(actions, prompt.section);
+
+    pane.appendChild(article);
   }
 
   function renderEditor(): void {
@@ -1268,6 +1714,186 @@ export function createReviewWorkbench(deps: ReviewWorkbenchDeps): ReviewWorkbenc
     return footer;
   }
 
+  /* ---------------- research task data flow ---------------- */
+
+  async function refreshResearch(options: { force?: boolean } = {}): Promise<void> {
+    if (!mounted) return;
+    if (state.researchLoaded && !options.force) return;
+    const token = ++researchListToken;
+    const generation = sessionGeneration;
+    try {
+      const result = await deps.api.listResearchTasks();
+      if (token !== researchListToken || isStaleSession(generation)) return;
+      state.researchTasks = result.tasks;
+      state.researchNote = result.note;
+      state.researchLoaded = true;
+      if (
+        state.researchTaskId &&
+        !result.tasks.some((task) => task.taskId === state.researchTaskId)
+      ) {
+        state.researchTaskId = null;
+        state.researchDetail = null;
+        state.researchLoading = false;
+      }
+      renderResearch();
+    } catch (error) {
+      if (token !== researchListToken || isStaleSession(generation)) return;
+      if (handleUnauthorized(error, generation)) return;
+      deps.onToast(error instanceof ApiError ? error.message : '读取研究案例列表失败。', 'error');
+    }
+  }
+
+  async function selectResearchTask(taskId: string): Promise<void> {
+    const token = ++researchTaskToken;
+    const generation = sessionGeneration;
+    state.researchTaskId = taskId;
+    state.researchDetail = null;
+    state.researchLoading = true;
+    renderResearch();
+    try {
+      const task = await deps.api.getResearchTask(taskId);
+      if (token !== researchTaskToken || isStaleSession(generation)) return;
+      if (state.researchTaskId !== taskId) return;
+      state.researchDetail = task;
+      state.researchLoading = false;
+      renderResearch();
+    } catch (error) {
+      if (token !== researchTaskToken || isStaleSession(generation)) return;
+      if (handleUnauthorized(error, generation)) return;
+      state.researchLoading = false;
+      renderResearch();
+      deps.onToast(error instanceof ApiError ? error.message : '读取研究案例失败。', 'error');
+    }
+  }
+
+  function researchImportHasContent(): boolean {
+    return (refs.researchImportTextarea?.value ?? '').trim().length > 0;
+  }
+
+  function setResearchImportControlsDisabled(disabled: boolean): void {
+    const controls = refs.researchImportDialog?.querySelectorAll<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | HTMLButtonElement
+    >('input, textarea, select, button');
+    if (!controls) return;
+    for (const control of controls) {
+      if (disabled) {
+        control.dataset.reviewWasDisabled = control.disabled ? '1' : '0';
+        control.disabled = true;
+      } else {
+        control.disabled = control.dataset.reviewWasDisabled === '1';
+        delete control.dataset.reviewWasDisabled;
+      }
+    }
+  }
+
+  function openResearchImport(): void {
+    setText(refs.researchImportError, '');
+    refs.researchImportDialog?.showModal();
+  }
+
+  function importItemLabel(value: unknown, index: number, total: number): string {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      const externalId = (value as { externalId?: unknown }).externalId;
+      if (typeof externalId === 'string' && externalId.trim().length > 0) {
+        return `externalId ${externalId.trim()}`;
+      }
+    }
+    return total > 1 ? `第 ${index + 1} 条` : '该任务';
+  }
+
+  /** Import through the real API: every failure is shown verbatim, never faked. */
+  async function importResearchTasks(dialog: ResearchImportDialog): Promise<void> {
+    if (state.researchImportBusy) return;
+    const raw = dialog.textarea.value.trim();
+    setText(refs.researchImportError, '');
+    if (raw.length === 0) {
+      setText(refs.researchImportError, '请先选择 JSON 文件或粘贴 JSON 内容。');
+      return;
+    }
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      setText(refs.researchImportError, 'JSON 解析失败，请检查内容格式。');
+      return;
+    }
+    const items = Array.isArray(parsed) ? parsed : [parsed];
+    if (items.length === 0) {
+      setText(refs.researchImportError, 'JSON 数组为空，没有可导入的任务。');
+      return;
+    }
+
+    state.researchImportBusy = true;
+    setResearchImportControlsDisabled(true);
+    const generation = sessionGeneration;
+    const failures: string[] = [];
+    let succeeded = 0;
+    try {
+      for (let index = 0; index < items.length; index += 1) {
+        if (isStaleSession(generation)) return;
+        try {
+          await deps.api.createResearchTask(items[index] as ResearchTaskInput);
+          if (isStaleSession(generation)) return;
+          succeeded += 1;
+        } catch (error) {
+          if (isStaleSession(generation)) return;
+          if (handleUnauthorized(error, generation)) return;
+          const message = error instanceof ApiError ? error.message : '导入失败。';
+          failures.push(`${importItemLabel(items[index], index, items.length)}：${message}`);
+        }
+      }
+    } finally {
+      if (!isStaleSession(generation)) {
+        state.researchImportBusy = false;
+        setResearchImportControlsDisabled(false);
+      }
+    }
+    if (isStaleSession(generation)) return;
+    if (failures.length > 0) {
+      setText(
+        refs.researchImportError,
+        `导入未全部成功：成功 ${succeeded} 条，失败 ${failures.length} 条。${failures.join('；')}`
+      );
+      // Keep the entered JSON so nothing is lost; show only real successes.
+      if (succeeded > 0) await refreshResearch({ force: true });
+      return;
+    }
+    dialog.textarea.value = '';
+    dialog.file.value = '';
+    dialog.element.close();
+    await refreshResearch({ force: true });
+    if (isStaleSession(generation)) return;
+    deps.onToast(
+      items.length === 1 ? '已导入 1 个研究案例。' : `已导入 ${items.length} 个研究案例。`
+    );
+  }
+
+  function downloadJson(filename: string, data: unknown): void {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const anchor = make('a', { attrs: { href: url, download: filename } });
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  /** Model input only: prompt, seeds and case ID — never the evaluator checks. */
+  function exportResearchModelInput(): void {
+    const task = state.researchDetail;
+    if (!task) return;
+    downloadJson(`research-model-input-${task.taskId}.json`, researchModelInput(task));
+    deps.onToast('已导出模型输入：仅问题与种子链接，不含评估标准。');
+  }
+
+  /** Full evaluator specification, exported separately from the model input. */
+  function exportResearchSpec(): void {
+    const task = state.researchDetail;
+    if (!task) return;
+    downloadJson(`research-task-spec-${task.taskId}.json`, researchSpecExport(task));
+    deps.onToast('已导出完整评估规范（含评估检查，仅供评估方使用）。');
+  }
+
   /* ---------------- data flow ---------------- */
 
   async function refreshQueue(): Promise<void> {
@@ -1335,6 +1961,7 @@ export function createReviewWorkbench(deps: ReviewWorkbenchDeps): ReviewWorkbenc
     mount();
     if (destroyed) return;
     if (!queueLoaded) await refreshQueue();
+    await refreshResearch();
     const target =
       caseId ?? state.caseId ?? visibleQueue()[0]?.caseId ?? state.queue[0]?.caseId ?? null;
     if (target && target !== state.caseId) {
@@ -1354,6 +1981,7 @@ export function createReviewWorkbench(deps: ReviewWorkbenchDeps): ReviewWorkbenc
       return;
     }
     await refreshQueue();
+    await refreshResearch({ force: true });
     if (state.caseId && state.queue.some((item) => item.caseId === state.caseId)) {
       await loadCase(state.caseId);
     } else {
@@ -1674,7 +2302,7 @@ export function createReviewWorkbench(deps: ReviewWorkbenchDeps): ReviewWorkbenc
   }
 
   function hasUnsavedChanges(): boolean {
-    return state.dirty || newCaseHasContent();
+    return state.dirty || newCaseHasContent() || researchImportHasContent();
   }
 
   /** Disable every new-case control while the POST is pending, remembering prior state. */
@@ -1949,6 +2577,8 @@ export function createReviewWorkbench(deps: ReviewWorkbenchDeps): ReviewWorkbenc
       queueToken += 1;
       loadToken += 1;
       busyGeneration += 1;
+      researchListToken += 1;
+      researchTaskToken += 1;
       queueLoaded = false;
       state.queue = [];
       state.progress = { ...EMPTY_PROGRESS };
@@ -1966,10 +2596,26 @@ export function createReviewWorkbench(deps: ReviewWorkbenchDeps): ReviewWorkbenc
       state.busy = false;
       state.dirty = false;
       state.newCaseBusy = false;
+      // Private research task DOM/cache must never survive an account switch.
+      state.researchTasks = [];
+      state.researchNote = '';
+      state.researchLoaded = false;
+      state.researchTaskId = null;
+      state.researchDetail = null;
+      state.researchLoading = false;
+      state.researchImportBusy = false;
       // Drop references to the detached old DOM so stale form values cannot
       // keep reporting unsaved work after a session change.
       refs.dialog = undefined as never;
       refs.sourceRows = undefined as never;
+      refs.researchSection = undefined as never;
+      refs.researchQueue = undefined as never;
+      refs.researchDetail = undefined as never;
+      refs.researchNote = undefined as never;
+      refs.researchImportDialog = undefined as never;
+      refs.researchImportError = undefined as never;
+      refs.researchImportSubmit = undefined as never;
+      refs.researchImportTextarea = undefined as never;
       mounted = false;
       clear(deps.root);
     },
@@ -1979,6 +2625,8 @@ export function createReviewWorkbench(deps: ReviewWorkbenchDeps): ReviewWorkbenc
       queueToken += 1;
       loadToken += 1;
       busyGeneration += 1;
+      researchListToken += 1;
+      researchTaskToken += 1;
       if (beforeUnload) {
         window.removeEventListener('beforeunload', beforeUnload);
         beforeUnload = null;

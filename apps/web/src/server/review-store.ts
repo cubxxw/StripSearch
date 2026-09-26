@@ -27,6 +27,12 @@ import type { DB } from './db/index.js';
 import { nowIso, newId } from './store.js';
 import type { SeedCase } from './review-seed.js';
 import { LIMITS } from '../shared/limits.js';
+import type {
+  ResearchCheck,
+  ResearchTaskInput,
+  ResearchTaskListItem,
+  ResearchTaskView
+} from '../shared/research-task.js';
 
 export interface StoredClaim {
   claimId: string;
@@ -425,8 +431,208 @@ export function toProvenanceList(record: ReviewCaseRecord): ReviewProvenance[] {
   });
 }
 
+interface ResearchTaskRow {
+  id: string;
+  owner_id: string;
+  dataset_version: string;
+  external_id: string;
+  title: string;
+  content_hash: string;
+  spec_json: string;
+  created_at: string;
+}
+
+/** Owner-scoped immutable research task snapshot. Never carries executions. */
+export interface ResearchTaskRecord {
+  id: string;
+  ownerId: string;
+  contentHash: string;
+  createdAt: string;
+  spec: ResearchTaskInput;
+}
+
+function mapResearchTask(row: ResearchTaskRow): ResearchTaskRecord {
+  const fallback: ResearchTaskInput = {
+    externalId: row.external_id,
+    datasetVersion: row.dataset_version,
+    title: row.title,
+    input: { prompt: '', identitySeedUrls: [] },
+    commonChecks: [],
+    personChecks: [],
+    observedStartingPoint: '',
+    typicalFailure: '',
+    sourcePackStatus: 'incomplete',
+    interactionSampleStatus: 'not_systematically_sampled'
+  };
+  return {
+    id: row.id,
+    ownerId: row.owner_id,
+    contentHash: row.content_hash,
+    createdAt: row.created_at,
+    spec: parseJson<ResearchTaskInput>(row.spec_json, fallback)
+  };
+}
+
+/**
+ * Safe response view: the fixed not-run/unreviewed status is explicit and the
+ * raw owner id never appears in any field.
+ */
+export function toResearchTaskView(record: ResearchTaskRecord): ResearchTaskView {
+  return {
+    taskId: record.id,
+    externalId: record.spec.externalId,
+    datasetVersion: record.spec.datasetVersion,
+    title: record.spec.title,
+    split: 'discovery',
+    contentHash: record.contentHash,
+    createdAt: record.createdAt,
+    executionStatus: 'not_run',
+    reviewStatus: 'unreviewed',
+    modelOutputs: [],
+    humanLabels: null,
+    input: {
+      prompt: record.spec.input.prompt,
+      identitySeedUrls: [...record.spec.input.identitySeedUrls]
+    },
+    commonChecks: record.spec.commonChecks.map((check: ResearchCheck) => ({ ...check })),
+    personChecks: record.spec.personChecks.map((check: ResearchCheck) => ({ ...check })),
+    observedStartingPoint: record.spec.observedStartingPoint,
+    typicalFailure: record.spec.typicalFailure,
+    sourcePackStatus: 'incomplete',
+    interactionSampleStatus: 'not_systematically_sampled'
+  };
+}
+
+/** Queue row without the evaluator criteria bodies. */
+export function toResearchTaskListItem(record: ResearchTaskRecord): ResearchTaskListItem {
+  return {
+    taskId: record.id,
+    externalId: record.spec.externalId,
+    datasetVersion: record.spec.datasetVersion,
+    title: record.spec.title,
+    split: 'discovery',
+    contentHash: record.contentHash,
+    createdAt: record.createdAt,
+    executionStatus: 'not_run',
+    reviewStatus: 'unreviewed',
+    modelOutputCount: 0,
+    sourcePackStatus: 'incomplete',
+    interactionSampleStatus: 'not_systematically_sampled'
+  };
+}
+
 export class ReviewStore {
   constructor(private readonly db: DB) {}
+
+  /* ---------------- candidate-free research task library ---------------- */
+
+  /**
+   * Idempotent create: the same owner+datasetVersion+externalId with the same
+   * content hash returns the existing record; changed content conflicts so an
+   * immutable snapshot is never silently overwritten.
+   */
+  createResearchTask(input: {
+    ownerId: string;
+    spec: ResearchTaskInput;
+  }): { ok: true; created: boolean; record: ResearchTaskRecord } | { ok: false; conflict: true; record: ResearchTaskRecord } {
+    const contentHash = contentHashOf(input.spec);
+    const tx = this.db.transaction(() => {
+      const existing = this.findResearchTaskByKey(
+        input.ownerId,
+        input.spec.datasetVersion,
+        input.spec.externalId
+      );
+      if (existing) {
+        return existing.contentHash === contentHash
+          ? ({ ok: true, created: false, record: existing } as const)
+          : ({ ok: false, conflict: true, record: existing } as const);
+      }
+      const timestamp = nowIso();
+      const id = newId('rtask');
+      try {
+        this.db
+          .prepare(
+            `INSERT INTO review_research_tasks (
+              id, owner_id, dataset_version, external_id, title, content_hash, spec_json, created_at
+            ) VALUES (
+              @id, @owner_id, @dataset_version, @external_id, @title, @content_hash, @spec_json, @created_at
+            )`
+          )
+          .run({
+            id,
+            owner_id: input.ownerId,
+            dataset_version: input.spec.datasetVersion,
+            external_id: input.spec.externalId,
+            title: input.spec.title,
+            content_hash: contentHash,
+            spec_json: JSON.stringify(input.spec),
+            created_at: timestamp
+          });
+      } catch (error) {
+        // A concurrent writer may have won the unique key; resolve through it.
+        const raced = this.findResearchTaskByKey(
+          input.ownerId,
+          input.spec.datasetVersion,
+          input.spec.externalId
+        );
+        if (!raced) throw error;
+        return raced.contentHash === contentHash
+          ? ({ ok: true, created: false, record: raced } as const)
+          : ({ ok: false, conflict: true, record: raced } as const);
+      }
+      const created = this.getResearchTask(id, input.ownerId);
+      if (!created) throw new Error('failed to insert research task');
+      return { ok: true, created: true, record: created } as const;
+    });
+    return tx();
+  }
+
+  private findResearchTaskRow(
+    ownerId: string,
+    datasetVersion: string,
+    externalId: string
+  ): ResearchTaskRow | undefined {
+    return this.db
+      .prepare(
+        'SELECT * FROM review_research_tasks WHERE owner_id = ? AND dataset_version = ? AND external_id = ?'
+      )
+      .get(ownerId, datasetVersion, externalId) as ResearchTaskRow | undefined;
+  }
+
+  findResearchTaskByKey(
+    ownerId: string,
+    datasetVersion: string,
+    externalId: string
+  ): ResearchTaskRecord | null {
+    const row = this.findResearchTaskRow(ownerId, datasetVersion, externalId);
+    return row ? mapResearchTask(row) : null;
+  }
+
+  getResearchTask(id: string, ownerId: string): ResearchTaskRecord | null {
+    const row = this.db
+      .prepare('SELECT * FROM review_research_tasks WHERE id = ? AND owner_id = ?')
+      .get(id, ownerId) as ResearchTaskRow | undefined;
+    return row ? mapResearchTask(row) : null;
+  }
+
+  listResearchTasksForOwner(
+    ownerId: string,
+    limit = LIMITS.researchTaskMaxPerUser
+  ): ResearchTaskRecord[] {
+    const rows = this.db
+      .prepare(
+        'SELECT * FROM review_research_tasks WHERE owner_id = ? ORDER BY created_at ASC, id ASC LIMIT ?'
+      )
+      .all(ownerId, limit) as ResearchTaskRow[];
+    return rows.map(mapResearchTask);
+  }
+
+  countResearchTasksForOwner(ownerId: string): number {
+    const row = this.db
+      .prepare('SELECT COUNT(*) AS n FROM review_research_tasks WHERE owner_id = ?')
+      .get(ownerId) as { n: number };
+    return row.n;
+  }
 
   insertCase(input: CreateReviewCaseInput): ReviewCaseRecord {
     const timestamp = nowIso();

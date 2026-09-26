@@ -1,0 +1,119 @@
+{
+  "viewports": [
+    {
+      "label": "1440 atlas",
+      "width": 1440,
+      "scroll": 1440,
+      "smallTargets": [],
+      "missingNames": 0
+    },
+    {
+      "label": "1440 workspace",
+      "width": 1440,
+      "scroll": 1440,
+      "smallTargets": [],
+      "missingNames": 0
+    },
+    {
+      "label": "1440 setup",
+      "width": 1440,
+      "scroll": 1440,
+      "smallTargets": [],
+      "missingNames": 0
+    },
+    {
+      "label": "1440 settings",
+      "width": 1440,
+      "scroll": 1440,
+      "smallTargets": [],
+      "missingNames": 0
+    },
+    {
+      "label": "1440 connections",
+      "width": 1440,
+      "scroll": 1440,
+      "smallTargets": [],
+      "missingNames": 0
+    },
+    {
+      "label": "768 atlas",
+      "width": 768,
+      "scroll": 768,
+      "smallTargets": [],
+      "missingNames": 0
+    },
+    {
+      "label": "768 workspace",
+      "width": 768,
+      "scroll": 768,
+      "smallTargets": [],
+      "missingNames": 0
+    },
+    {
+      "label": "768 setup",
+      "width": 768,
+      "scroll": 768,
+      "smallTargets": [],
+      "missingNames": 0
+    },
+    {
+      "label": "768 settings",
+      "width": 768,
+      "scroll": 768,
+      "smallTargets": [],
+      "missingNames": 0
+    },
+    {
+      "label": "768 connections",
+      "width": 768,
+      "scroll": 768,
+      "smallTargets": [],
+      "missingNames": 0
+    },
+    {
+      "label": "375 atlas",
+      "width": 375,
+      "scroll": 375,
+      "smallTargets": [],
+      "missingNames": 0
+    },
+    {
+      "label": "375 workspace",
+      "width": 375,
+      "scroll": 375,
+      "smallTargets": [],
+      "missingNames": 0
+    },
+    {
+      "label": "375 setup",
+      "width": 375,
+      "scroll": 375,
+      "smallTargets": [],
+      "missingNames": 0
+    },
+    {
+      "label": "375 settings",
+      "width": 375,
+      "scroll": 375,
+      "smallTargets": [],
+      "missingNames": 0
+    },
+    {
+      "label": "375 connections",
+      "width": 375,
+      "scroll": 375,
+      "smallTargets": [],
+      "missingNames": 0
+    }
+  ],
+  "errors": [],
+  "externalRequests": [],
+  "interactions": [
+    "Graph selection, exclusion/recovery, source withdrawal, native Escape and focus restoration",
+    "Native Markdown download includes source withdrawal, timeline and public interaction dependencies",
+    "Provider draft stays unverified, preferences survive reload, app reduced-motion bypasses replay",
+    "Action search and Enter activation",
+    "Onboarding runs chosen scope, limits report to website plus two X candidates",
+    "System reduced-motion disables graph animation and bypasses timed replay"
+  ]
+}

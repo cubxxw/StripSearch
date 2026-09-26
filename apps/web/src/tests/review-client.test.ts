@@ -175,7 +175,14 @@ function harness(caseIds: string[], options: { details?: Record<string, ReviewCa
         readability: 0
       }
     }),
-    exportReview: async () => '{}'
+    exportReview: async () => '{}',
+    listResearchTasks: async () => ({ tasks: [], note: '' }),
+    getResearchTask: async () => {
+      throw new Error('research detail not used in this harness');
+    },
+    createResearchTask: async () => {
+      throw new Error('research import not used in this harness');
+    }
   };
   state.api = api;
   state.workbench = createReviewWorkbench({
@@ -451,7 +458,14 @@ test('submitted history and provenance reveal after a finalized review', async (
         readability: 0
       }
     }),
-    exportReview: async () => ''
+    exportReview: async () => '',
+    listResearchTasks: async () => ({ tasks: [], note: '' }),
+    getResearchTask: async () => {
+      throw new Error('research detail not used in this harness');
+    },
+    createResearchTask: async () => {
+      throw new Error('research import not used in this harness');
+    }
   } satisfies ReviewApi;
   const workbench = createReviewWorkbench({ api, root, onToast: () => undefined });
   await workbench.open('case_1');

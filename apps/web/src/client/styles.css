@@ -564,12 +564,52 @@ dialog::backdrop { background: var(--backdrop); }
 .review-source-row textarea { min-height: 62px; }
 .review-meta-fields { display: grid; gap: 8px; }
 
+/* Candidate-free research task library (above the answer-pair section) */
+.review-section-head { margin-top: 26px; }
+.review-section-head h2 { margin: 0 0 4px; font-size: clamp(20px, 2.2vw, 26px); letter-spacing: -.03em; }
+.review-research { margin-top: 18px; padding: 18px; border: 1px solid var(--border-strong); background: var(--surface-2); }
+.review-research-head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.review-research-head-text { min-width: 0; }
+.review-research-head-text h2 { margin: 0 0 6px; font-size: clamp(20px, 2.4vw, 28px); letter-spacing: -.03em; }
+.review-research-head-text .helper { margin: 0 0 4px; }
+.review-research-note { margin: 0; color: var(--muted); font-family: var(--font-mono); font-size: 12px; }
+.review-research-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.review-research-layout {
+  display: grid; grid-template-columns: minmax(220px, 300px) minmax(0, 1fr);
+  gap: 16px; margin-top: 14px; align-items: start;
+}
+.review-research-queue { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; max-height: 460px; overflow-y: auto; }
+.review-research-item {
+  display: grid; gap: 6px; width: 100%; padding: 10px 12px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--bg); color: var(--fg); text-align: left; cursor: pointer;
+}
+.review-research-item:hover { border-color: var(--border-strong); }
+.review-research-item[aria-current="true"] { background: var(--accent-dark); box-shadow: inset 2px 0 0 var(--accent); }
+.review-research-detail { min-width: 0; }
+.review-research-case { display: grid; gap: 14px; }
+.review-research-block { padding: 12px 14px; border: 1px solid var(--border); background: var(--bg); }
+.review-research-block h3 { margin: 0 0 6px; font-size: 15px; }
+.review-research-block .helper { margin: 0 0 8px; }
+.review-research-block p { margin: 0; overflow-wrap: anywhere; }
+.review-seed-links { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 13px; overflow-wrap: anywhere; }
+.review-check-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.review-check { padding: 10px; border: 1px solid var(--border); background: var(--surface); }
+.review-check-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; overflow-wrap: anywhere; }
+.review-check-look { margin: 6px 0 0; color: var(--fg-2); font-size: 13px; overflow-wrap: anywhere; }
+.review-import-modal { width: min(94vw, 680px); }
+.review-import-form { display: grid; gap: 10px; padding: 18px; max-height: 86dvh; overflow-y: auto; }
+.review-import-form h2 { margin: 0; font-size: 20px; }
+.review-import-form textarea { min-height: 220px; font-family: var(--font-mono); font-size: 12px; }
+
 @media (max-width: 940px) {
   .narrow-nav { display: inline-flex; }
   .review-body { grid-template-columns: 1fr; }
   .review-queue-panel { position: static; max-height: none; }
   .review-queue { max-height: 320px; }
   .review-phase1 { grid-template-columns: 1fr; }
+  .review-research-layout { grid-template-columns: 1fr; }
+  .review-research-queue { max-height: 320px; }
 }
 @media (max-width: 640px) {
   .review-head { padding-block: 18px 8px; }
@@ -628,3 +668,6 @@ dialog::backdrop { background: var(--backdrop); }
   .review-editor-bar-actions { width: 100%; }
   .review-editor-bar-actions .button { flex: 1 1 auto; }
 }
+
+.review-research-records dd { overflow-wrap: anywhere; margin-inline-start: 0; }
+.review-research-common summary, .review-research-records summary { cursor: pointer; padding: 8px 0; }

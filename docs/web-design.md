@@ -4,6 +4,8 @@
 
 已交付：[最终交互原型](../design/web/index.html) · [设计规范](../design/web/DESIGN.md) · [验证记录](../design/web/VALIDATION.md)。
 
+新增视觉探索（2026-09-21）：[Signal Atlas / Open Dossier](../design/web/next/README.md) 与[多平台状态契约](../design/web/NEXT-DESIGN.md)。用户已选择 A，深化官网图谱、研究引导与配置；B 保留为存档。独立原型使用明确隔离的合成语料 v2，不改变原有 Web alpha 能力与里程碑。
+
 主题：默认跟随系统亮 / 深色；亮色采用纸白与深绿，深色保留黑底荧光绿。首页、Chat、出处面板与移动端抽屉使用同一套主题令牌。
 
 ## 访问者与入口

@@ -1,0 +1,62 @@
+{
+  "review_date": "2026-09-23/24",
+  "catalog_manifest_count": 152,
+  "catalog_readme_count": 151,
+  "system_reviews": [
+    {
+      "slug": "notion",
+      "sha256": "94c550cc035a90aa08b6645e7b3105d2e579453f8415e57b3639319fdb7e5b23"
+    },
+    {
+      "slug": "kami",
+      "sha256": "8c4708f5967de6f91037be59b9ecfd956023ebe3a3f9a16649c7646f03512273"
+    },
+    {
+      "slug": "xiaohongshu",
+      "sha256": "e1a103ef765f4dd20d814372d7d18f3a5e99bfcce085537bb289d5d59b4bc2d9"
+    },
+    {
+      "slug": "paper",
+      "sha256": "aa4d8b38f35a8264b90d3a8a216857860a32fa4d870f3fa8c6d77bd53955923f"
+    },
+    {
+      "slug": "warm-editorial",
+      "sha256": "d478c0b23c15f0ef6b8863048d7ac809d0627216aa1efd6c303c242c6c470a5d"
+    },
+    {
+      "slug": "spacious",
+      "sha256": "6dc6e07b5890d214c171cc74c8a7491f3e26ab1294921fac0b089b29229f93a0"
+    },
+    {
+      "slug": "minimal",
+      "sha256": "70f28c2c184ed4634d1d1ab03a88fd940aca526f4c04603209caf03561d6d6bb"
+    },
+    {
+      "slug": "atelier-zero",
+      "sha256": "c6c4020ad2d7739ec2401ba73a7049f05fcb8af0486e3fd4cbb7941a3198186c"
+    },
+    {
+      "slug": "publication",
+      "sha256": "f0aaeed691caeecf624bb510482baee6a5d1fe2593ac72b87e691c3009e37b03"
+    },
+    {
+      "slug": "editorial",
+      "sha256": "fc2b9e3dddf4911796911cd0d11b8a02f039d74a96a361e67fea4fc2b1775e31"
+    },
+    {
+      "slug": "apple",
+      "sha256": "001c06b02855b8443b397bfef583be5dedfd96391dcae94d7e3050e64841ed4d"
+    },
+    {
+      "slug": "perplexity",
+      "sha256": "e747bcc529b74d82c52549a2355f6b8a546bd4a90a09f91e22f74a1a142564fd"
+    }
+  ],
+  "rendered_template_examples": [
+    "mobile-app",
+    "web-prototype-taste-editorial",
+    "kami-landing",
+    "web-prototype-taste-soft"
+  ],
+  "note": "Installed Open Design library; brand-inspired packages are not official brand kits. Screenshots held outside repository."
+}

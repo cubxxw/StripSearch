@@ -52,7 +52,20 @@ export const LIMITS = {
   reviewMustAvoidMax: 1200,
   reviewMaxReasonTags: 6,
   reviewMaxCasesPerUser: 200,
-  reviewQueueLimit: 200
+  reviewQueueLimit: 200,
+
+  /** Candidate-free research task library (evaluation specs, never run here). */
+  researchTaskExternalIdMax: 120,
+  researchTaskDatasetVersionMax: 60,
+  researchTaskPromptMax: 2000,
+  researchTaskSeedUrlsMax: 8,
+  researchTaskChecksMax: 12,
+  researchTaskCheckIdMax: 64,
+  researchTaskFocusMax: 200,
+  researchTaskLookForMax: 1000,
+  researchTaskObservationMax: 1000,
+  researchTaskFailureMax: 1000,
+  researchTaskMaxPerUser: 50
 } as const;
 
 export const SESSION_EXPIRES_SECONDS = 60 * 60 * 24 * 7;

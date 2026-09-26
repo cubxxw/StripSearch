@@ -136,4 +136,21 @@ CREATE TABLE IF NOT EXISTS review_annotations (
 );
 CREATE INDEX IF NOT EXISTS review_annotations_case ON review_annotations(case_id, revision DESC);
 CREATE INDEX IF NOT EXISTS review_annotations_owner ON review_annotations(owner_id, created_at DESC);
+
+-- Candidate-free research task library: immutable, owner-scoped evaluation
+-- specifications. Never executed here (executionStatus is always not_run and
+-- human labels are always empty); fully separate from review_cases so the
+-- existing answer-pair cases keep their schemas, hashes and records.
+CREATE TABLE IF NOT EXISTS review_research_tasks (
+  id TEXT PRIMARY KEY,
+  owner_id TEXT NOT NULL,
+  dataset_version TEXT NOT NULL,
+  external_id TEXT NOT NULL,
+  title TEXT NOT NULL,
+  content_hash TEXT NOT NULL,
+  spec_json TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  UNIQUE(owner_id, dataset_version, external_id)
+);
+CREATE INDEX IF NOT EXISTS review_research_tasks_owner ON review_research_tasks(owner_id, created_at ASC, id ASC);
 `;

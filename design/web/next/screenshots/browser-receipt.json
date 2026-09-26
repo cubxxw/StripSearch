@@ -1,0 +1,107 @@
+{
+  "viewports": [
+    {
+      "page": "index.html",
+      "route": "home",
+      "width": 1440,
+      "scroll": 1440,
+      "smallTargets": [],
+      "missingNames": 0
+    },
+    {
+      "page": "index.html",
+      "route": "#/workspace",
+      "width": 1440,
+      "scroll": 1440,
+      "smallTargets": [],
+      "missingNames": 0
+    },
+    {
+      "page": "dossier.html",
+      "route": "home",
+      "width": 1440,
+      "scroll": 1440,
+      "smallTargets": [],
+      "missingNames": 0
+    },
+    {
+      "page": "dossier.html",
+      "route": "#/workspace",
+      "width": 1440,
+      "scroll": 1440,
+      "smallTargets": [],
+      "missingNames": 0
+    },
+    {
+      "page": "index.html",
+      "route": "home",
+      "width": 768,
+      "scroll": 768,
+      "smallTargets": [],
+      "missingNames": 0
+    },
+    {
+      "page": "index.html",
+      "route": "#/workspace",
+      "width": 768,
+      "scroll": 768,
+      "smallTargets": [],
+      "missingNames": 0
+    },
+    {
+      "page": "dossier.html",
+      "route": "home",
+      "width": 768,
+      "scroll": 768,
+      "smallTargets": [],
+      "missingNames": 0
+    },
+    {
+      "page": "dossier.html",
+      "route": "#/workspace",
+      "width": 768,
+      "scroll": 768,
+      "smallTargets": [],
+      "missingNames": 0
+    },
+    {
+      "page": "index.html",
+      "route": "home",
+      "width": 375,
+      "scroll": 375,
+      "smallTargets": [],
+      "missingNames": 0
+    },
+    {
+      "page": "index.html",
+      "route": "#/workspace",
+      "width": 375,
+      "scroll": 375,
+      "smallTargets": [],
+      "missingNames": 0
+    },
+    {
+      "page": "dossier.html",
+      "route": "home",
+      "width": 375,
+      "scroll": 375,
+      "smallTargets": [],
+      "missingNames": 0
+    },
+    {
+      "page": "dossier.html",
+      "route": "#/workspace",
+      "width": 375,
+      "scroll": 375,
+      "smallTargets": [],
+      "missingNames": 0
+    }
+  ],
+  "errors": [],
+  "externalRequests": [],
+  "interactions": [
+    "Nested source dialog, withdrawal, native Escape and focus restoration passed",
+    "Real browser Markdown download contains withdrawal and separate uncertain accounts",
+    "Reduced motion disables animations and completes synthetic replay without timers"
+  ]
+}

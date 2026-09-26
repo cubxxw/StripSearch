@@ -12,6 +12,61 @@
 - 所有案例固定 `split = discovery`。没有伪造的 holdout 控制。
 - 不做自动外发；没有付费 API、没有联网抓取。练习案例不包含可抓取 URL。
 
+## 综合人物研究案例（尚无候选回答的 研究任务库）
+
+`/#/review` 顶部新增**独立于**两候选回答评审的「综合人物研究案例」库：它保存人物研究任务的**评估规范**（task specification + evaluator checks），供后续 harness 使用。当前**没有任何模型运行**，也没有人工判断；旧的 10 个合成练习案例、既有标注、导出与汇总完全不变，仍在下方「回答对照评审」分组中可用。
+
+### 共享契约 `ResearchTaskInput`
+
+服务端、客户端与测试共用 `apps/web/src/shared/research-task.ts` 中的类型与校验。所有字段都有界，**超长或无效直接拒绝（400）；文本去除控制字符及首尾空白，不截断内容**；请求体总大小仍受现有 `32 KiB` 上限约束。
+
+| 字段 | 约束 |
+| --- | --- |
+| `externalId` | 必填字符串，1–120 字符，幂等键的一部分 |
+| `datasetVersion` | 必填字符串，1–60 字符，幂等键的一部分 |
+| `title` | 必填字符串，1–120 字符 |
+| `input.prompt` | 必填字符串，1–2000 字符（保留换行） |
+| `input.identitySeedUrls` | 1–8 条；每条 1–2048 字符，仅 `http(s)`、无凭据、有主机名（复用 `validateSeedUrl`），规范化后去重 |
+| `commonChecks[]` / `personChecks[]` | 各 1–12 条对象 `{ id, focus, lookFor }`：`id` 1–64、`focus` 1–200、`lookFor` 1–1000 字符，列表内 `id` 不得重复（典型为 6 条共同检查 + 4 条人物检查） |
+| `observedStartingPoint` | 必填字符串，1–1000 字符，**暂定观察起点** |
+| `typicalFailure` | 必填字符串，1–1000 字符 |
+| `sourcePackStatus` | 固定 `incomplete`，其他值拒绝 |
+| `interactionSampleStatus` | 固定 `not_systematically_sampled`，其他值拒绝 |
+
+未知的额外顶层键被忽略（前向兼容）；`POST` 只接受**单个**任务对象，数组请由客户端逐条提交。
+
+创建时服务端追加并固定：`split = discovery`、`executionStatus = not_run`、`reviewStatus = unreviewed`、`modelOutputs = []`、`humanLabels = null`、服务端 `taskId`、`createdAt` 与 `contentHash`（对规范化后的 `ResearchTaskInput` 做 `stableStringify` 后 SHA-256，可独立重算）。这些字段是**不可变快照**；AI 拟定的检查标准 只是提议标准，**不是人工标签，也不是 gold**。
+
+### 存储：新表 `review_research_tasks`（纯增量）
+
+| 字段 | 说明 |
+| --- | --- |
+| `id` / `owner_id` | 服务端 ID 与账号隔离；读写都校验 owner，其他账号得到 `404` |
+| `dataset_version` / `external_id` | `UNIQUE(owner_id, dataset_version, external_id)` 幂等键 |
+| `content_hash` | 创建时对规范内容的 SHA-256；同键同哈希幂等（达到容量上限仍可重试），同键不同内容 `409` |
+| `spec_json` | 规范化后的完整 `ResearchTaskInput` 快照（不可变） |
+| `created_at` | 创建时间 |
+
+`review_cases` / `review_annotations` 的表结构、内容与 `content_hash` **不变**；研究任务不写入、不读取、不修改旧评审数据。
+
+### API（同源 `/api/review/research-tasks*`）
+
+与既有评审路由共用登录、精确 `Origin` 与 32 KiB 请求体中间件；响应只含安全的 owner 数据，**绝不回传原始 owner ID**；`GET` 永不创建或修改任务，也**不抓取种子链接**。
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| `GET` | `/api/review/research-tasks` | 当前账号任务列表（标题、状态、哈希，不含评估标准正文） |
+| `POST` | `/api/review/research-tasks` | 创建单个规范；同 owner+`datasetVersion`+`externalId` 且同 `contentHash` 返回同一条（`200`，`created:false`），同键不同内容 `409 research_task_conflict`；每账号上限 50 条（`409 research_task_limit`） |
+| `GET` | `/api/review/research-tasks/:id` | 完整规范视图（含 checks）；非 owner 一律 `404` |
+
+### 界面与导出
+
+- 「综合人物研究案例」库位于回答对照评审**之前**，列出标题；选中后展示：实际问题、身份种子链接（仅 `http(s)`，文本渲染不注入 HTML）、共同 / 人物评估检查、**暂定**观察起点、常见失败、来源包 `不完整` 与交互样本 `未系统抽样` 状态。
+- 每条显示 `待运行 · 未评审`，并显式说明**模型输出 0 条**、人工判断为空白；界面上没有自动勾选的人工判断控件。
+- 空库显示「导入研究案例」：JSON 文件或 textarea，支持单个对象或对象数组；逐条走真实 `POST`，失败原样展示服务端错误，**绝不假报成功**；成功条数只按真实成功统计。
+- 两种导出互相独立：**模型输入导出**只含 `caseId`、`externalId`、`datasetVersion`、`prompt` 与种子链接（`stripsearch/research-model-input/v1`），**不含任何评估标准**，避免标准泄漏给被评模型；**完整评估规范导出**才包含 checks、观察起点与常见失败。
+- 刷新页面从服务端重新读取（持久化保留）；账号切换 / 会话失效会清空研究案例缓存与 DOM，迟到的列表 / 详情 / 导入响应被忽略（与既有工作台的 generation 守卫一致）。
+
 ## 入口与工作流
 
 1. 登录后打开顶部导航「标注工作台」，或直接访问 `/#/review`（深链案例：`/#/review/<caseId>`）。
@@ -86,6 +141,9 @@ SQLite 表由 `apps/web/src/server/db/schema.ts` 的 `CORE_SCHEMA_SQL` 幂等创
 | `DELETE` | `/api/review/cases/:id` | 删除案例及其全部评审 |
 | `GET` | `/api/review/insights` | 仅基于已提交的最新修订的聚合计数与人工确认建议 |
 | `GET` | `/api/review/export?format=json\|jsonl&filter=all\|reviewed` | 用户触发的下载导出 |
+| `GET` | `/api/review/research-tasks` | 综合人物研究案例列表（尚无候选回答的，见上文契约） |
+| `POST` | `/api/review/research-tasks` | 创建单个研究任务规范；同键同哈希幂等（达到容量上限仍可重试），同键不同内容 `409` |
+| `GET` | `/api/review/research-tasks/:id` | 单条完整规范；非 owner `404` |
 
 写入校验（均在返回 `400` 前明确拒绝）：
 
@@ -120,7 +178,7 @@ npm --prefix apps/web run build
 python3 scripts/check_design.py
 ```
 
-离线测试覆盖：认证 / Origin / 所有权、练习案例幂等与上限、案例与评审重启持久化、过期 revision 拒绝、原型键与错误类型拒绝、伪造证据与论断 ID、超长输入拒绝、草稿与提交门槛、盲映射稳定与提交前元数据不泄露、重复保存不重复计数、删除级联、导出完整历史 / 可复现哈希 / 资格、账号切换与迟到响应隔离；客户端覆盖内容转义、默认无选择、保存失败保留草稿、保存并下一题、快捷键、队列筛选、未保存保护、历史只读查看与候选全文对照。
+离线测试覆盖：认证 / Origin / 所有权、练习案例幂等与上限、案例与评审重启持久化、过期 revision 拒绝、原型键与错误类型拒绝、伪造证据与论断 ID、超长输入拒绝、草稿与提交门槛、盲映射稳定与提交前元数据不泄露、重复保存不重复计数、删除级联、导出完整历史 / 可复现哈希 / 资格、账号切换与迟到响应隔离；客户端覆盖内容转义、默认无选择、保存失败保留草稿、保存并下一题、快捷键、队列筛选、未保存保护、历史只读查看与候选全文对照。综合人物研究案例覆盖：认证 / Origin / 所有权且响应不泄露 owner ID、同键同哈希幂等与内容冲突 409、每账号 50 条上限、固定 `not_run` / `unreviewed` 字段与可复现 `contentHash`、非法 / 超长输入（含非 http(s) 种子链接与 32 KiB 载荷）拒绝、`GET` 永不创建、重启后持久化；客户端覆盖空库邀请、选中详情（含 6+4 检查、暂定观察起点与固定状态、无自动勾选）、真实 API 导入的失败与部分失败展示（不假报成功）、模型输入导出不含任何评估标准、重载重新拉取与账号切换迟到列表 / 详情响应隔离。
 
 ## 实现参考（版本锁定见 `apps/web/package.json`）
 
@@ -140,6 +198,8 @@ python3 scripts/check_design.py
 
 ## 已知限制
 
+- 综合人物研究案例只是**评估规范**：`not_run` / `unreviewed`，模型输出恒为 0，人工判断恒为空白；AI 拟定的检查标准 不是人工标签或 gold，规范存在不等于评测通过。
+- 研究任务库没有删除 / 编辑端点（导入幂等，修正需父级重新导入新 `externalId` 或由后续工作补充）；种子链接只做校验与展示，从不抓取。
 - 单评审探索：没有第二位评审时不能称为双盲 gold，也不能写成基准通过。
 - 合成示例候选只能说明流程可用，不能证明任何模型质量；这不是完美的盲选保证（人工作者仍可能记得自己写了哪一版）。
 - 偏好与理由标签是主观判断，汇总不计算准确率 / 胜率。

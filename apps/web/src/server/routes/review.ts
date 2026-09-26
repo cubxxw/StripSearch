@@ -10,6 +10,8 @@ import {
   isReviewStatus,
   validateAnnotationShape
 } from '../../shared/review.js';
+import { parseResearchTaskInput } from '../../shared/research-task.js';
+import type { ResearchTaskSpec } from '../../shared/research-task.js';
 import type {
   ClaimLabel,
   Preference,
@@ -35,6 +37,8 @@ import {
   toCaseDetail,
   toHistoryEntry,
   toProvenanceList,
+  toResearchTaskListItem,
+  toResearchTaskView,
   type ReviewAnnotationRecord,
   type ReviewCaseRecord,
   type ReviewStore
@@ -582,5 +586,51 @@ export function registerReviewRoutes(router: Router, deps: ReviewRouteDeps): voi
     if (!record) throw new HttpError(404, 'case_not_found', '未找到该标注案例。');
     reviewStore.deleteCaseForOwner(record.id, user.id);
     res.status(204).end();
+  });
+
+  /* ---------------- candidate-free research task library ---------------- */
+
+  // Reads only: GET never creates, mutates or fetches any seed URL.
+  router.get('/review/research-tasks', (_req: Request, res: Response) => {
+    const user = requireUser(res);
+    const tasks = reviewStore.listResearchTasksForOwner(user.id).map(toResearchTaskListItem);
+    res.json({
+      tasks,
+      note: '研究任务仅为评估规范：尚未运行模型，人工判断为空白。'
+    });
+  });
+
+  router.post('/review/research-tasks', (req: Request, res: Response) => {
+    const user = requireUser(res);
+    // `req.body` verbatim: an array payload must be rejected with the explicit
+    // single-object message instead of being coerced to `{}`.
+    const parsed = parseResearchTaskInput(req.body);
+    if (!parsed.ok) {
+      throw new HttpError(400, 'invalid_research_task', parsed.message);
+    }
+    const spec: ResearchTaskSpec = parsed.spec;
+    const existing = reviewStore.findResearchTaskByKey(user.id, spec.datasetVersion, spec.externalId);
+    if (!existing && reviewStore.countResearchTasksForOwner(user.id) >= LIMITS.researchTaskMaxPerUser) {
+      throw new HttpError(409, 'research_task_limit', `每个账号最多 ${LIMITS.researchTaskMaxPerUser} 个研究任务。`);
+    }
+    const result = reviewStore.createResearchTask({ ownerId: user.id, spec });
+    if (!result.ok) {
+      throw new HttpError(
+        409,
+        'research_task_conflict',
+        '相同 externalId + datasetVersion 已存在内容不同的研究任务，不覆盖既有快照。'
+      );
+    }
+    res.status(result.created ? 201 : 200).json({
+      task: toResearchTaskView(result.record),
+      created: result.created
+    });
+  });
+
+  router.get('/review/research-tasks/:taskId', (req: Request, res: Response) => {
+    const user = requireUser(res);
+    const record = reviewStore.getResearchTask(String(req.params.taskId), user.id);
+    if (!record) throw new HttpError(404, 'research_task_not_found', '未找到该研究任务。');
+    res.json({ task: toResearchTaskView(record) });
   });
 }
