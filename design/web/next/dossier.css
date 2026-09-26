@@ -1,0 +1,1238 @@
+/* ==========================================================================
+   StripSearch · Open Dossier (visual direction B, second pass)
+   Loaded after shared.css. Scoped to body[data-direction="dossier"].
+   Warm ivory paper, ink, vermilion. Editorial newspaper archive.
+   No external assets, no infinite decorative animation.
+   ========================================================================== */
+
+body[data-direction="dossier"] {
+  --ivory: #eee9df;
+  --ink: #232422;
+  --vermilion: #b83d25;
+  --vermilion-lite: #e08063;
+  --paper: #f6f2e9;
+  --paper-deep: #e3ddd0;
+  --deep: #1b1c1a;
+  --rule: rgba(35, 36, 34, 0.16);
+  --rule-strong: rgba(35, 36, 34, 0.34);
+  --muted: rgba(35, 36, 34, 0.74);
+  --faint: rgba(35, 36, 34, 0.66);
+  --deep-rule: rgba(238, 233, 223, 0.2);
+  --deep-muted: rgba(238, 233, 223, 0.7);
+
+  --serif: Georgia, "Times New Roman", "Songti SC", "Noto Serif CJK SC",
+    "Source Han Serif SC", "SimSun", serif;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC",
+    "Source Han Sans SC", sans-serif;
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+
+  --gutter: clamp(1.25rem, 4vw, 4rem);
+  --shell: 1360px;
+
+  margin: 0;
+  background-color: var(--ivory);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.65;
+  overflow-x: clip;
+  -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body[data-direction="dossier"] *,
+body[data-direction="dossier"] *::before,
+body[data-direction="dossier"] *::after {
+  box-sizing: border-box;
+}
+
+/* Static paper grain. Never animated. */
+body[data-direction="dossier"]::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.55;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(35, 36, 34, 0.028) 0 1px, transparent 1px 4px),
+    repeating-linear-gradient(90deg, rgba(35, 36, 34, 0.02) 0 1px, transparent 1px 5px);
+}
+
+body[data-direction="dossier"] #landing,
+body[data-direction="dossier"] #workspace,
+body[data-direction="dossier"] #evidence-dialog {
+  position: relative;
+  z-index: 1;
+}
+
+body[data-direction="dossier"] [hidden] {
+  display: none !important;
+}
+
+body[data-direction="dossier"] :focus-visible {
+  outline: 2px solid var(--vermilion);
+  outline-offset: 3px;
+}
+
+body[data-direction="dossier"] a {
+  color: inherit;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+body[data-direction="dossier"] img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* --------------------------------------------------------------- skip link */
+body[data-direction="dossier"] .skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -4rem;
+  z-index: 60;
+  padding: 0.75rem 1.1rem;
+  background: var(--ink);
+  color: var(--ivory);
+  font-weight: 600;
+  text-decoration: none;
+}
+body[data-direction="dossier"] .skip-link:focus {
+  top: 0.75rem;
+}
+
+body[data-direction="dossier"] .visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ----------------------------------------------------------------- topbar */
+body[data-direction="dossier"] .topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  padding: 0.65rem var(--gutter);
+  background: rgba(238, 233, 223, 0.92);
+  border-bottom: 1px solid var(--rule-strong);
+  backdrop-filter: blur(7px);
+}
+
+body[data-direction="dossier"] .brand {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  min-height: 44px;
+  text-decoration: none;
+}
+body[data-direction="dossier"] .brand-name {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+}
+body[data-direction="dossier"] .brand-sub {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--vermilion);
+}
+
+body[data-direction="dossier"] .demo-badge {
+  margin: 0;
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--vermilion);
+  color: var(--vermilion);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+body[data-direction="dossier"] .topnav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+  margin-left: auto;
+}
+body[data-direction="dossier"] .topnav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+body[data-direction="dossier"] .topnav a:hover {
+  color: var(--ink);
+  text-decoration-color: var(--vermilion);
+}
+
+/* -------------------------------------------------------------- masthead */
+body[data-direction="dossier"] .masthead {
+  position: relative;
+  padding: clamp(1.75rem, 4vw, 3.25rem) var(--gutter) clamp(0.75rem, 2vw, 1.5rem);
+  border-bottom: 3px double var(--ink);
+}
+
+body[data-direction="dossier"] .masthead-eyebrow {
+  margin: 0 0 clamp(0.75rem, 2vw, 1.5rem);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--vermilion);
+}
+
+body[data-direction="dossier"] .masthead-art {
+  position: relative;
+  display: block;
+}
+
+body[data-direction="dossier"] .mh-open,
+body[data-direction="dossier"] .mh-dossier {
+  display: block;
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: clamp(3.6rem, 18.5vw, 14rem);
+  line-height: 0.8;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+body[data-direction="dossier"] .mh-open {
+  color: var(--ink);
+}
+body[data-direction="dossier"] .mh-dossier {
+  margin-top: -0.04em;
+  color: var(--vermilion);
+  text-align: right;
+}
+body[data-direction="dossier"] .mh-mark {
+  position: absolute;
+  right: 0;
+  top: -0.6rem;
+  font-family: var(--mono);
+  font-size: clamp(0.72rem, 1.6vw, 0.95rem);
+  letter-spacing: 0.18em;
+  color: var(--ink);
+}
+
+body[data-direction="dossier"] .masthead-foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.35rem 2rem;
+  margin: clamp(1rem, 2.5vw, 1.75rem) 0 0;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--rule);
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+body[data-direction="dossier"] .masthead-foot span:first-child {
+  font-family: var(--serif);
+  font-style: italic;
+  color: var(--ink);
+}
+
+/* ------------------------------------------------------------------ hero */
+body[data-direction="dossier"] .hero {
+  display: grid;
+  gap: clamp(1.75rem, 4vw, 3.25rem);
+  padding: clamp(2rem, 5vw, 4rem) var(--gutter) clamp(2.25rem, 5vw, 4.5rem);
+  border-bottom: 1px solid var(--rule);
+}
+
+body[data-direction="dossier"] .kicker {
+  margin: 0 0 1rem;
+  display: inline-block;
+  padding-bottom: 0.35rem;
+  border-bottom: 2px solid var(--vermilion);
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--vermilion);
+}
+
+body[data-direction="dossier"] .hero-title {
+  margin: 0 0 1.25rem;
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: clamp(2.6rem, 8vw, 5.75rem);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+}
+
+body[data-direction="dossier"] .hero-lede {
+  max-width: 48ch;
+  margin: 0;
+  font-size: 1.0625rem;
+  line-height: 1.7;
+  color: var(--muted);
+}
+body[data-direction="dossier"] .inline-ref {
+  color: var(--vermilion);
+  font-weight: 700;
+}
+
+/* ----------------------------------------------------------------- entry */
+body[data-direction="dossier"] .entry {
+  align-self: end;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  box-shadow: 10px 10px 0 var(--paper-deep), 11px 11px 0 var(--rule-strong);
+}
+
+body[data-direction="dossier"] .entry-head {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 0.85rem;
+}
+body[data-direction="dossier"] .entry-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.9rem;
+  height: 1.9rem;
+  background: var(--vermilion);
+  color: var(--ivory);
+  font-family: var(--mono);
+  font-size: 0.8rem;
+}
+body[data-direction="dossier"] .entry-label {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 1.15rem;
+}
+
+body[data-direction="dossier"] .entry-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+body[data-direction="dossier"] .entry-input,
+body[data-direction="dossier"] .field-control {
+  width: 100%;
+  min-height: 52px;
+  padding: 0.7rem 0.9rem;
+  background: #fffdf8;
+  color: var(--ink);
+  border: 1px solid var(--ink);
+  border-radius: 0;
+  font-family: var(--sans);
+  font-size: 1.0625rem;
+  line-height: 1.4;
+}
+body[data-direction="dossier"] .entry-input::placeholder,
+body[data-direction="dossier"] .field-control::placeholder {
+  color: var(--faint);
+}
+body[data-direction="dossier"] .entry-input:focus,
+body[data-direction="dossier"] .field-control:focus {
+  outline: 2px solid var(--vermilion);
+  outline-offset: 2px;
+  border-color: var(--vermilion);
+}
+
+body[data-direction="dossier"] .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  padding: 0.7rem 1.5rem;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--ivory);
+  font-family: var(--sans);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+body[data-direction="dossier"] .btn-primary:hover {
+  background: var(--vermilion);
+  border-color: var(--vermilion);
+}
+body[data-direction="dossier"] .btn:active {
+  transform: translateY(1px);
+}
+
+body[data-direction="dossier"] .entry-hint {
+  margin: 0.75rem 0 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+body[data-direction="dossier"] .entry-more {
+  margin-top: 1.1rem;
+  padding-top: 0.9rem;
+  border-top: 1px dashed var(--rule-strong);
+}
+body[data-direction="dossier"] .entry-more > summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-weight: 700;
+  color: var(--vermilion);
+  cursor: pointer;
+}
+body[data-direction="dossier"] .entry-more[open] > summary {
+  margin-bottom: 0.75rem;
+}
+body[data-direction="dossier"] .entry-more-body {
+  display: grid;
+  gap: 0.4rem;
+}
+body[data-direction="dossier"] .field-label {
+  margin-top: 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+body[data-direction="dossier"] .field-control {
+  min-height: 44px;
+  font-size: 1rem;
+  resize: vertical;
+}
+body[data-direction="dossier"] .field-note {
+  margin: 0.35rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+body[data-direction="dossier"] .entry-examples {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: 1.25rem;
+}
+body[data-direction="dossier"] .entry-examples-label {
+  width: 100%;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+body[data-direction="dossier"] .chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0.45rem 0.9rem;
+  background: transparent;
+  border: 1px solid var(--ink);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+body[data-direction="dossier"] .chip:hover {
+  background: var(--ink);
+  color: var(--ivory);
+}
+
+/* ------------------------------------------------------------- sections */
+body[data-direction="dossier"] .section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 2px solid var(--ink);
+}
+body[data-direction="dossier"] .section-title {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+  letter-spacing: -0.01em;
+}
+body[data-direction="dossier"] .section-en {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--vermilion);
+  white-space: nowrap;
+}
+body[data-direction="dossier"] .section-lede {
+  max-width: 62ch;
+  margin: 1rem 0 1.75rem;
+  color: var(--muted);
+}
+
+/* ------------------------------------------------------------ platforms */
+body[data-direction="dossier"] .platforms {
+  padding: clamp(2rem, 5vw, 3.75rem) var(--gutter);
+  border-bottom: 1px solid var(--rule);
+}
+
+body[data-direction="dossier"] .platform-list {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--ink);
+}
+body[data-direction="dossier"] .platform {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.15rem;
+  padding: 0.9rem 0;
+  border-bottom: 1px solid var(--rule-strong);
+}
+body[data-direction="dossier"] .platform-name {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 1.2rem;
+}
+body[data-direction="dossier"] .platform-handle {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+body[data-direction="dossier"] .platform-state {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+body[data-direction="dossier"] .platform-state::before {
+  content: "";
+  display: inline-block;
+  width: 0.55em;
+  height: 0.55em;
+  margin-right: 0.5em;
+  border: 1px solid currentColor;
+  vertical-align: baseline;
+}
+body[data-direction="dossier"] .is-linked .platform-state {
+  color: var(--vermilion);
+  font-weight: 700;
+}
+body[data-direction="dossier"] .is-linked .platform-state::before {
+  background: currentColor;
+}
+body[data-direction="dossier"] .is-uncertain .platform-state {
+  color: var(--ink);
+  font-weight: 700;
+}
+body[data-direction="dossier"] .is-uncertain .platform-state::before {
+  background: repeating-linear-gradient(
+    45deg,
+    currentColor 0 2px,
+    transparent 2px 4px
+  );
+}
+body[data-direction="dossier"] .is-none .platform-state {
+  color: var(--faint);
+}
+
+/* ------------------------------------------------------------------ folio */
+body[data-direction="dossier"] .folio-section {
+  padding: clamp(2.5rem, 6vw, 5rem) var(--gutter);
+  background: var(--paper-deep);
+  border-bottom: 1px solid var(--rule);
+}
+
+body[data-direction="dossier"] .folio {
+  position: relative;
+  max-width: 1120px;
+  margin: clamp(1.5rem, 4vw, 3rem) auto 0;
+  padding: clamp(1.25rem, 3.5vw, 3rem);
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  box-shadow: 14px 14px 0 var(--paper-deep), 15px 15px 0 var(--rule-strong);
+}
+
+body[data-direction="dossier"] .folio-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 3px double var(--ink);
+}
+body[data-direction="dossier"] .folio-kicker {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+body[data-direction="dossier"] .folio-no {
+  margin: 0.35rem 0 0;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--ink);
+}
+body[data-direction="dossier"] .stamp {
+  display: inline-block;
+  padding: 0.4rem 0.85rem;
+  border: 3px double var(--vermilion);
+  color: var(--vermilion);
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.14em;
+  transform: rotate(-4deg);
+}
+
+body[data-direction="dossier"] .folio-subject {
+  padding: clamp(1.25rem, 3vw, 2rem) 0;
+  border-bottom: 1px solid var(--rule-strong);
+}
+body[data-direction="dossier"] .folio-name {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: clamp(3rem, 10vw, 6rem);
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+}
+body[data-direction="dossier"] .folio-roman {
+  margin: 0.6rem 0 0;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+body[data-direction="dossier"] .folio-work {
+  margin: 1rem 0 0;
+  font-size: 1.05rem;
+}
+body[data-direction="dossier"] .folio-work strong {
+  font-family: var(--serif);
+  font-size: 1.2rem;
+}
+
+body[data-direction="dossier"] .folio-evidence {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+body[data-direction="dossier"] .ev {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: clamp(1.25rem, 2.5vw, 1.75rem) 0;
+  border-bottom: 1px solid var(--rule);
+}
+body[data-direction="dossier"] .ev-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 0.7rem;
+}
+body[data-direction="dossier"] .ev-id {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.45rem;
+  background: var(--ink);
+  color: var(--ivory);
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+body[data-direction="dossier"] .ev-type {
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+body[data-direction="dossier"] .ev-date {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--vermilion);
+}
+body[data-direction="dossier"] .ev-loc {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--faint);
+}
+body[data-direction="dossier"] .ev-quote {
+  margin: 0.15rem 0 0.35rem;
+  padding-left: 0.85rem;
+  border-left: 3px solid var(--vermilion);
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+body[data-direction="dossier"] .ev-notes,
+body[data-direction="dossier"] .slice-notes {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.3rem 0.75rem;
+  margin: 0;
+}
+body[data-direction="dossier"] .ev-notes dt,
+body[data-direction="dossier"] .slice-notes dt {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--vermilion);
+  white-space: nowrap;
+  padding-top: 0.15rem;
+}
+body[data-direction="dossier"] .ev-notes dd,
+body[data-direction="dossier"] .slice-notes dd {
+  margin: 0 0 0.4rem;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+body[data-direction="dossier"] .ev-open {
+  align-self: flex-start;
+  min-height: 44px;
+  margin-top: auto;
+  padding: 0.35rem 0;
+  background: none;
+  border: none;
+  color: var(--vermilion);
+  font-family: var(--sans);
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+body[data-direction="dossier"] .folio-note {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: clamp(1.5rem, 3vw, 2.25rem);
+  padding: clamp(1.1rem, 2.5vw, 1.6rem);
+  background: var(--ink);
+  color: var(--ivory);
+}
+body[data-direction="dossier"] .folio-note-title {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--vermilion-lite);
+}
+body[data-direction="dossier"] .folio-note p {
+  margin: 0;
+  max-width: 68ch;
+  font-size: 0.95rem;
+  color: var(--deep-muted);
+}
+body[data-direction="dossier"] .folio-note .mono {
+  font-family: var(--mono);
+  color: var(--ivory);
+}
+body[data-direction="dossier"] .folio-note-open {
+  justify-self: start;
+  min-height: 44px;
+  padding: 0.55rem 1.1rem;
+  background: transparent;
+  border: 1px solid var(--ivory);
+  color: var(--ivory);
+  font-family: var(--sans);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+body[data-direction="dossier"] .folio-note-open:hover {
+  background: var(--vermilion);
+  border-color: var(--vermilion);
+}
+
+/* --------------------------------------------------------------- slices */
+body[data-direction="dossier"] .slices {
+  padding: clamp(2.5rem, 6vw, 5rem) var(--gutter);
+  border-bottom: 1px solid var(--rule);
+}
+
+body[data-direction="dossier"] .slice-tabs {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+}
+body[data-direction="dossier"] .slice-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-height: 56px;
+  padding: 0.6rem 0.9rem;
+  background: transparent;
+  border: 1px solid var(--ink);
+  color: var(--ink);
+  font-family: var(--sans);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+body[data-direction="dossier"] .slice-tab:hover {
+  border-color: var(--vermilion);
+}
+body[data-direction="dossier"] .slice-tab[aria-selected="true"] {
+  background: var(--ink);
+  color: var(--ivory);
+}
+body[data-direction="dossier"] .slice-date {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+}
+body[data-direction="dossier"] .slice-tab[aria-selected="true"] .slice-date {
+  color: var(--vermilion-lite);
+}
+body[data-direction="dossier"] .slice-label {
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+body[data-direction="dossier"] .slice-panels {
+  margin-top: 1.25rem;
+}
+body[data-direction="dossier"] .slice-panel {
+  padding: clamp(1.25rem, 3vw, 2.25rem);
+  background: var(--paper);
+  border: 1px solid var(--ink);
+}
+body[data-direction="dossier"] .slice-panel:focus-visible {
+  outline-offset: -4px;
+}
+body[data-direction="dossier"] .slice-panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid var(--rule-strong);
+}
+body[data-direction="dossier"] .slice-panel-head time {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  color: var(--vermilion);
+}
+body[data-direction="dossier"] .slice-tag {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+body[data-direction="dossier"] .slice-title {
+  margin: 1rem 0 0.5rem;
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: clamp(1.3rem, 3vw, 1.8rem);
+}
+body[data-direction="dossier"] .slice-context {
+  max-width: 68ch;
+  margin: 0 0 1.1rem;
+  color: var(--muted);
+}
+
+/* ------------------------------------------------------------ boundaries */
+body[data-direction="dossier"] .boundaries {
+  padding: clamp(2.5rem, 6vw, 5rem) var(--gutter);
+  background: var(--deep);
+  color: var(--ivory);
+}
+body[data-direction="dossier"] .boundaries-inner {
+  max-width: var(--shell);
+  margin: 0 auto;
+}
+body[data-direction="dossier"] .section-head-inverse {
+  border-bottom-color: var(--ivory);
+}
+body[data-direction="dossier"] .section-head-inverse .section-en {
+  color: var(--vermilion-lite);
+}
+body[data-direction="dossier"] .boundary-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: clamp(1.5rem, 4vw, 3rem);
+  margin-top: clamp(1.5rem, 4vw, 2.5rem);
+}
+body[data-direction="dossier"] .boundary h3 {
+  margin: 0 0 0.85rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--deep-rule);
+  font-family: var(--serif);
+  font-size: 1.2rem;
+}
+body[data-direction="dossier"] .boundary ul {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+body[data-direction="dossier"] .boundary li {
+  display: grid;
+  grid-template-columns: 1.1rem minmax(0, 1fr);
+  gap: 0.4rem;
+  font-size: 0.92rem;
+  color: var(--deep-muted);
+}
+body[data-direction="dossier"] .boundary li::before {
+  content: "—";
+  color: var(--vermilion-lite);
+}
+
+/* ------------------------------------------------------------------ foot */
+body[data-direction="dossier"] .site-foot {
+  padding: clamp(2rem, 5vw, 3.5rem) var(--gutter) clamp(1.5rem, 4vw, 2.5rem);
+  background: var(--ink);
+  color: var(--ivory);
+}
+body[data-direction="dossier"] .foot-main {
+  display: grid;
+  gap: clamp(1.5rem, 4vw, 3rem);
+  max-width: var(--shell);
+  margin: 0 auto;
+  padding-bottom: clamp(1.25rem, 3vw, 2rem);
+  border-bottom: 1px solid var(--deep-rule);
+}
+body[data-direction="dossier"] .foot-logo {
+  margin: 0;
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 1.6rem;
+}
+body[data-direction="dossier"] .foot-tag {
+  margin: 0.35rem 0 0;
+  font-family: var(--serif);
+  font-style: italic;
+  color: var(--deep-muted);
+}
+body[data-direction="dossier"] .foot-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.25rem;
+}
+body[data-direction="dossier"] .foot-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--deep-muted);
+  font-size: 0.9rem;
+}
+body[data-direction="dossier"] .foot-link:hover {
+  color: var(--ivory);
+}
+body[data-direction="dossier"] .foot-link-strong {
+  padding: 0.55rem 1.1rem;
+  background: var(--vermilion);
+  border: 1px solid var(--vermilion);
+  color: var(--ivory);
+  font-family: var(--sans);
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+body[data-direction="dossier"] .foot-link-strong:hover {
+  background: var(--ivory);
+  border-color: var(--ivory);
+  color: var(--ink);
+}
+body[data-direction="dossier"] .foot-fine {
+  max-width: var(--shell);
+  margin: clamp(1.25rem, 3vw, 1.75rem) auto 0;
+  font-size: 0.8rem;
+  color: rgba(238, 233, 223, 0.55);
+}
+
+/* -------------------------------------------------------------- workspace */
+body[data-direction="dossier"] #workspace {
+  max-width: var(--shell);
+  margin: 0 auto;
+  padding: clamp(1.5rem, 4vw, 3rem) var(--gutter) clamp(3rem, 6vw, 5rem);
+}
+body[data-direction="dossier"] #workspace h1,
+body[data-direction="dossier"] #workspace h2,
+body[data-direction="dossier"] #workspace h3 {
+  font-family: var(--serif);
+  line-height: 1.15;
+}
+body[data-direction="dossier"] #workspace a {
+  color: var(--vermilion);
+}
+body[data-direction="dossier"] #workspace button:not([class]),
+body[data-direction="dossier"] #workspace [data-home] {
+  min-height: 44px;
+}
+
+/* ---------------------------------------------------------------- dialog */
+body[data-direction="dossier"] #evidence-dialog {
+  width: min(680px, 92vw);
+  max-width: 100%;
+  max-height: 85vh;
+  overflow: auto;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--ink);
+  box-shadow: 12px 12px 0 rgba(27, 28, 26, 0.28);
+}
+body[data-direction="dossier"] #evidence-dialog::backdrop {
+  background: rgba(27, 28, 26, 0.58);
+}
+body[data-direction="dossier"] .dialog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--ink);
+}
+body[data-direction="dossier"] .dialog-head form {
+  margin: 0;
+}
+body[data-direction="dossier"] #evidence-dialog-title {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 1.35rem;
+}
+body[data-direction="dossier"] .dialog-close {
+  min-height: 44px;
+  padding: 0.4rem 0.9rem;
+  background: transparent;
+  border: 1px solid var(--ink);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-weight: 700;
+  cursor: pointer;
+}
+body[data-direction="dossier"] .dialog-close:hover {
+  background: var(--ink);
+  color: var(--ivory);
+}
+body[data-direction="dossier"] #evidence-body {
+  padding-top: 1rem;
+  font-size: 0.95rem;
+}
+body[data-direction="dossier"] #evidence-body h3,
+body[data-direction="dossier"] #evidence-body h4 {
+  font-family: var(--serif);
+  margin: 1rem 0 0.4rem;
+}
+body[data-direction="dossier"] #evidence-body dl {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.3rem 0.75rem;
+  margin: 0;
+}
+body[data-direction="dossier"] #evidence-body dt {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--vermilion);
+}
+body[data-direction="dossier"] #evidence-body dd {
+  margin: 0 0 0.4rem;
+  color: var(--muted);
+}
+
+/* ----------------------------------------------------------- breakpoints */
+@media (min-width: 520px) {
+  body[data-direction="dossier"] .entry-row {
+    flex-direction: row;
+    align-items: stretch;
+  }
+  body[data-direction="dossier"] .entry-input {
+    flex: 1 1 auto;
+  }
+  body[data-direction="dossier"] .entry-examples-label {
+    width: auto;
+    margin-right: 0.4rem;
+  }
+}
+
+@media (min-width: 600px) {
+  body[data-direction="dossier"] .platform-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: clamp(1.25rem, 3vw, 2.5rem);
+  }
+  body[data-direction="dossier"] .slice-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  body[data-direction="dossier"] .foot-main {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    align-items: start;
+  }
+}
+
+@media (min-width: 900px) {
+  body[data-direction="dossier"] .platform-list {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  body[data-direction="dossier"] .boundary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  body[data-direction="dossier"] .slice-tabs {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  body[data-direction="dossier"] .folio-evidence {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border-top: 1px solid var(--rule-strong);
+  }
+  body[data-direction="dossier"] .ev {
+    border-bottom: none;
+    border-right: 1px solid var(--rule);
+    padding: clamp(1.25rem, 2vw, 1.75rem);
+  }
+  body[data-direction="dossier"] .ev:first-child {
+    padding-left: 0;
+  }
+  body[data-direction="dossier"] .ev:last-child {
+    padding-right: 0;
+    border-right: none;
+  }
+}
+
+@media (min-width: 1024px) {
+  body[data-direction="dossier"] .hero {
+    grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.95fr);
+    align-items: end;
+  }
+  body[data-direction="dossier"] .masthead {
+    padding-top: clamp(2.25rem, 4vw, 3.5rem);
+  }
+}
+
+@media (min-width: 1440px) {
+  body[data-direction="dossier"] {
+    --gutter: 5rem;
+  }
+  body[data-direction="dossier"] .hero {
+    padding-top: 5rem;
+    padding-bottom: 5.5rem;
+  }
+}
+
+/* Phone: compact masthead so the research input and primary action stay
+   above the fold on a 375 x 812 viewport. */
+@media (max-width: 599px) {
+  body[data-direction="dossier"] .topbar {
+    gap: 0.4rem 0.6rem;
+    padding: 0.5rem var(--gutter);
+  }
+  body[data-direction="dossier"] .brand-name {
+    font-size: 1.05rem;
+  }
+  body[data-direction="dossier"] .brand-sub {
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+  }
+  body[data-direction="dossier"] .demo-badge {
+    font-size: 0.65rem;
+    letter-spacing: 0.05em;
+    padding: 0.28rem 0.55rem;
+  }
+  body[data-direction="dossier"] .masthead {
+    padding-top: 1rem;
+    padding-bottom: 0.6rem;
+  }
+  body[data-direction="dossier"] .masthead-eyebrow {
+    margin-bottom: 0.5rem;
+    font-size: 0.66rem;
+  }
+  body[data-direction="dossier"] .mh-open,
+  body[data-direction="dossier"] .mh-dossier {
+    font-size: 15.5vw;
+  }
+  body[data-direction="dossier"] .masthead-foot {
+    margin-top: 0.6rem;
+    padding-top: 0.6rem;
+    font-size: 0.78rem;
+  }
+  body[data-direction="dossier"] .hero {
+    padding-top: 1.25rem;
+    gap: 1.25rem;
+  }
+  body[data-direction="dossier"] .kicker {
+    margin-bottom: 0.7rem;
+  }
+  body[data-direction="dossier"] .hero-title {
+    font-size: clamp(2.15rem, 9vw, 3rem);
+    margin-bottom: 1rem;
+  }
+  body[data-direction="dossier"] .hero-lede {
+    font-size: 1rem;
+  }
+  body[data-direction="dossier"] .entry {
+    padding: 1rem;
+    box-shadow: 6px 6px 0 var(--paper-deep), 7px 7px 0 var(--rule-strong);
+  }
+}
+
+/* ------------------------------------------------------- reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  body[data-direction="dossier"] *,
+  body[data-direction="dossier"] *::before,
+  body[data-direction="dossier"] *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  body[data-direction="dossier"] .btn:active {
+    transform: none;
+  }
+}
+
+/* Shared result workspace tokens. Brand differs; canonical evidence does not. */
+body[data-direction="dossier"]{--bg:#eee9df;--surface:#f6f2e9;--surface-2:#e3ddd0;--fg:#232422;--line:#c6bfb2;--accent:#ad3721;--on-accent:#fffaf3;--warn:#81500d;--danger:#a12822}
+body[data-direction="dossier"] .person-tile{font-family:Georgia,serif;border-radius:0}
+body[data-direction="dossier"] .work-title h1,body[data-direction="dossier"] .view-panel>h2{font-family:var(--serif)}
+body[data-direction="dossier"] .work-sidebar{background:#e6e0d5}
+body[data-direction="dossier"] .account-row{border-radius:0}
+body[data-direction="dossier"] .notice{z-index:100}
+body[data-direction="dossier"] .mh-open{animation:folio-enter .7s ease-out both}
+body[data-direction="dossier"] .mh-dossier{animation:folio-enter .7s .12s ease-out both}
+body[data-direction="dossier"] .slice-panel:not([hidden]){animation:content-in .25s ease-out both}
+@keyframes folio-enter{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
+body[data-direction="dossier"] #workspace{max-width:none;padding:0}
+body[data-direction="dossier"] #evidence-dialog{padding:0;position:fixed}
+body[data-direction="dossier"] #evidence-body{padding:28px}
+body[data-direction="dossier"] .entry-row .btn{white-space:nowrap;flex-shrink:0}
+body[data-direction="dossier"] .entry-input{min-width:0}
+@media(min-width:1024px){
+ body[data-direction="dossier"] .masthead{padding-top:28px;padding-bottom:18px}
+ body[data-direction="dossier"] .mh-open,body[data-direction="dossier"] .mh-dossier{font-size:clamp(100px,13vw,180px)}
+ body[data-direction="dossier"] .hero{padding-top:38px;padding-bottom:48px;align-items:center}
+ body[data-direction="dossier"] .hero-title{font-size:clamp(48px,4.7vw,72px);line-height:1.2}
+ body[data-direction="dossier"] .entry{align-self:center}
+ body[data-direction="dossier"] .hero-lede{font-size:15px}
+}
+@media(prefers-reduced-motion:reduce){body[data-direction="dossier"] .mh-open,body[data-direction="dossier"] .mh-dossier,body[data-direction="dossier"] .slice-panel{animation:none}}

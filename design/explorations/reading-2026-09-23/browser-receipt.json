@@ -1,0 +1,321 @@
+{
+  "responsive_checks": [
+    {
+      "direction": "a",
+      "route": "home",
+      "width": 375,
+      "overflow": false,
+      "title": "今天，想了解谁？",
+      "errors": [],
+      "smallButtons": []
+    },
+    {
+      "direction": "a",
+      "route": "feed",
+      "width": 375,
+      "overflow": false,
+      "title": "今天，值得读的。",
+      "errors": [],
+      "smallButtons": []
+    },
+    {
+      "direction": "a",
+      "route": "person",
+      "width": 375,
+      "overflow": false,
+      "title": "陈遥",
+      "errors": [],
+      "smallButtons": []
+    },
+    {
+      "direction": "a",
+      "route": "article/p1",
+      "width": 375,
+      "overflow": false,
+      "title": "工具越少，思考就越多吗？",
+      "errors": [],
+      "smallButtons": []
+    },
+    {
+      "direction": "b",
+      "route": "home",
+      "width": 375,
+      "overflow": false,
+      "title": "沿着好奇心，认识一个人。",
+      "errors": [],
+      "smallButtons": []
+    },
+    {
+      "direction": "b",
+      "route": "feed",
+      "width": 375,
+      "overflow": false,
+      "title": "跟着好奇心走。",
+      "errors": [],
+      "smallButtons": []
+    },
+    {
+      "direction": "b",
+      "route": "person",
+      "width": 375,
+      "overflow": false,
+      "title": "陈遥",
+      "errors": [],
+      "smallButtons": []
+    },
+    {
+      "direction": "b",
+      "route": "article/p1",
+      "width": 375,
+      "overflow": false,
+      "title": "工具越少，思考就越多吗？",
+      "errors": [],
+      "smallButtons": []
+    },
+    {
+      "direction": "a",
+      "route": "home",
+      "width": 768,
+      "overflow": false,
+      "title": "今天，想了解谁？",
+      "errors": [],
+      "smallButtons": []
+    },
+    {
+      "direction": "a",
+      "route": "feed",
+      "width": 768,
+      "overflow": false,
+      "title": "今天，值得读的。",
+      "errors": [],
+      "smallButtons": []
+    },
+    {
+      "direction": "a",
+      "route": "person",
+      "width": 768,
+      "overflow": false,
+      "title": "陈遥",
+      "errors": [],
+      "smallButtons": []
+    },
+    {
+      "direction": "a",
+      "route": "article/p1",
+      "width": 768,
+      "overflow": false,
+      "title": "工具越少，思考就越多吗？",
+      "errors": [],
+      "smallButtons": [
+        "简洁不是屏幕上东西少，而是下一步不需要猜。"
+      ]
+    },
+    {
+      "direction": "b",
+      "route": "home",
+      "width": 768,
+      "overflow": false,
+      "title": "沿着好奇心，认识一个人。",
+      "errors": [],
+      "smallButtons": []
+    },
+    {
+      "direction": "b",
+      "route": "feed",
+      "width": 768,
+      "overflow": false,
+      "title": "跟着好奇心走。",
+      "errors": [],
+      "smallButtons": []
+    },
+    {
+      "direction": "b",
+      "route": "person",
+      "width": 768,
+      "overflow": false,
+      "title": "陈遥",
+      "errors": [],
+      "smallButtons": []
+    },
+    {
+      "direction": "b",
+      "route": "article/p1",
+      "width": 768,
+      "overflow": false,
+      "title": "工具越少，思考就越多吗？",
+      "errors": [],
+      "smallButtons": [
+        "简洁不是屏幕上东西少，而是下一步不需要猜。"
+      ]
+    },
+    {
+      "direction": "a",
+      "route": "home",
+      "width": 1440,
+      "overflow": false,
+      "title": "今天，想了解谁？",
+      "errors": [],
+      "smallButtons": []
+    },
+    {
+      "direction": "a",
+      "route": "feed",
+      "width": 1440,
+      "overflow": false,
+      "title": "今天，值得读的。",
+      "errors": [],
+      "smallButtons": []
+    },
+    {
+      "direction": "a",
+      "route": "person",
+      "width": 1440,
+      "overflow": false,
+      "title": "陈遥",
+      "errors": [],
+      "smallButtons": []
+    },
+    {
+      "direction": "a",
+      "route": "article/p1",
+      "width": 1440,
+      "overflow": false,
+      "title": "工具越少，思考就越多吗？",
+      "errors": [],
+      "smallButtons": [
+        "简洁不是屏幕上东西少，而是下一步不需要猜。"
+      ]
+    },
+    {
+      "direction": "b",
+      "route": "home",
+      "width": 1440,
+      "overflow": false,
+      "title": "沿着好奇心，认识一个人。",
+      "errors": [],
+      "smallButtons": []
+    },
+    {
+      "direction": "b",
+      "route": "feed",
+      "width": 1440,
+      "overflow": false,
+      "title": "跟着好奇心走。",
+      "errors": [],
+      "smallButtons": []
+    },
+    {
+      "direction": "b",
+      "route": "person",
+      "width": 1440,
+      "overflow": false,
+      "title": "陈遥",
+      "errors": [],
+      "smallButtons": []
+    },
+    {
+      "direction": "b",
+      "route": "article/p1",
+      "width": 1440,
+      "overflow": false,
+      "title": "工具越少，思考就越多吗？",
+      "errors": [],
+      "smallButtons": [
+        "简洁不是屏幕上东西少，而是下一步不需要猜。"
+      ]
+    }
+  ],
+  "notes": "Browser viewport emulation, not iOS Simulator. Button text selections are inline passage controls.",
+  "interaction_readbacks": {
+    "before_article": {
+      "ok": true,
+      "data": {
+        "type": "string",
+        "value": "{\"scroll\":650}"
+      }
+    },
+    "after_article": {
+      "ok": true,
+      "data": {
+        "type": "string",
+        "value": "{\"scroll\":0,\"route\":\"#/feed\"}"
+      }
+    },
+    "reduced_motion_dark": {
+      "ok": true,
+      "data": {
+        "type": "string",
+        "value": "{\"reduce\":true,\"dark\":true,\"animation\":\"none\",\"paper\":\"rgb(32, 33, 30)\",\"overflow\":false}"
+      }
+    },
+    "pause": {
+      "ok": true,
+      "data": {
+        "type": "string",
+        "value": "{\"active\":0,\"status\":\"回放已暂停\"}"
+      }
+    },
+    "network": {
+      "captured": 229,
+      "external_http": []
+    },
+    "focus_final": {
+      "ok": true,
+      "data": {
+        "type": "string",
+        "value": "{\"closed\":true,\"focus\":\"S4\"}"
+      }
+    },
+    "before_article_final": {
+      "ok": true,
+      "data": {
+        "type": "string",
+        "value": "{\"scroll\":650}"
+      }
+    },
+    "after_article_final": {
+      "ok": true,
+      "data": {
+        "type": "string",
+        "value": "{\"scroll\":91,\"route\":\"#/feed\"}"
+      }
+    },
+    "reading_position_final": {
+      "ok": true,
+      "data": {
+        "type": "string",
+        "value": "{\"scroll\":650,\"expected\":650,\"restored\":true}"
+      }
+    },
+    "inline_touch_target_final": [
+      {
+        "ok": true,
+        "data": {
+          "type": "string",
+          "value": "{\"width\":768,\"quoteHeight\":44,\"overflow\":false}"
+        }
+      },
+      {
+        "ok": true,
+        "data": {
+          "type": "string",
+          "value": "{\"width\":1440,\"quoteHeight\":44,\"overflow\":false}"
+        }
+      }
+    ],
+    "board_ask_final": {
+      "ok": true,
+      "data": {
+        "type": "string",
+        "value": "[{\"title\":\"方案 A 手机原型\",\"dialog\":true},{\"title\":\"方案 B 手机原型\",\"dialog\":true}]"
+      }
+    },
+    "board_desktop_final": {
+      "ok": true,
+      "data": {
+        "type": "string",
+        "value": "{\"overflow\":false,\"headings\":[\"今天，想了解谁？\",\"沿着好奇心，认识一个人。\"],\"boxes\":[620,620]}"
+      }
+    }
+  }
+}

@@ -5,7 +5,8 @@
   "description": "Offline jsdom checks for the StripSearch Evidence Terminal prototype.",
   "type": "commonjs",
   "scripts": {
-    "test": "node prototype.test.cjs"
+    "test": "node prototype.test.cjs",
+    "test:next": "node next.test.cjs && node atlas.test.cjs"
   },
   "devDependencies": {
     "jsdom": "30.1.0"

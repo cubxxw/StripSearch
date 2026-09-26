@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><link rel="icon" href="data:,">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<meta name="description" content="StripSearch Open Dossier：以公开经历、作品与行动理解一个人，每项判断都能回到证据。交互演示 · 合成样例。">
+<title>StripSearch · Open Dossier · 在碎片之间，读懂一个人</title>
+<link rel="stylesheet" href="shared.css">
+<link rel="stylesheet" href="dossier.css">
+<script src="demo.js" defer></script>
+</head>
+<body data-direction="dossier">
+<a class="skip-link" href="#entry-form">跳到研究入口</a>
+
+<div id="landing">
+  <header class="topbar">
+    <a class="brand" href="#/" data-home aria-label="StripSearch 首页">
+      <span class="brand-name">StripSearch</span>
+      <span class="brand-sub">Open Dossier</span>
+    </a>
+    <p class="demo-badge">交互演示 · 合成样例</p>
+    <nav class="topnav" aria-label="对照与源码">
+      <a href="index.html">A · Signal Atlas ↗</a>
+      <a href="https://github.com/cubxxw/StripSearch" rel="noopener noreferrer">开源仓库</a>
+    </nav>
+  </header>
+
+  <div class="masthead">
+    <p class="masthead-eyebrow">公开材料研究档案 · VOL. 01</p>
+    <div class="masthead-art" aria-hidden="true">
+      <span class="mh-open">OPEN</span>
+      <span class="mh-dossier">DOSSIER</span>
+      <span class="mh-mark">№ 001</span>
+    </div>
+    <p class="masthead-foot">
+      <span>Research the person. Trace the evidence.</span>
+      <span>面向采访准备、作品研究与授权自我研究</span>
+    </p>
+  </div>
+
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero-copy">
+      <p class="kicker">证据优先的人物研究</p>
+      <h1 class="hero-title" id="hero-title">在碎片之间，<br>读懂一个人。</h1>
+      <p class="hero-lede">
+        从公开经历、作品与行动理解一个人，让每项判断都能回到它的出处。
+        这里把<span class="inline-ref">平台索引</span>、<span class="inline-ref">档案</span>与<span class="inline-ref">时间切片</span>放在同一份可核查的记录上。
+      </p>
+    </div>
+
+    <form class="entry" id="entry-form" action="#/workspace">
+      <div class="entry-head">
+        <span class="entry-step" aria-hidden="true">01</span>
+        <label class="entry-label" for="seed">公开姓名、用户名或主页</label>
+      </div>
+      <div class="entry-row">
+        <input class="entry-input" id="seed" name="seed" type="text"
+               maxlength="200"
+               autocomplete="off" autocapitalize="off" spellcheck="false"
+               placeholder="例如：林舟 · linzhou-lab · 公开主页"
+               aria-describedby="seed-hint">
+        <button class="btn btn-primary" type="submit">开始梳理</button>
+      </div>
+      <p class="entry-hint" id="seed-hint">只使用公开职业材料，或明确授权的材料；输入仅体验入口，接下来展示虚构研究者林舟；不发起真实采集。</p>
+
+      <details class="entry-more">
+        <summary>添加可选线索</summary>
+        <div class="entry-more-body">
+          <label class="field-label" for="question">想弄清楚的问题</label>
+          <textarea class="field-control" id="question" name="question" rows="2"
+                    placeholder="例如：林舟在 Lantern 中如何把可解释性变成具体设计决策？"></textarea>
+
+          <label class="field-label" for="authorized-image">已授权图片的原始出处（网址）</label>
+          <input class="field-control" id="authorized-image" name="authorized-image" type="url"
+                 inputmode="url" placeholder="https://…（仅用于核对图片出处）"
+                 aria-describedby="image-hint">
+          <p class="field-note" id="image-hint">仅接受已获授权的图片出处，用于核对来源；不做人脸识别，不推断私人身份，也不处理私人影像。</p>
+        </div>
+      </details>
+
+      <div class="entry-examples">
+        <span class="entry-examples-label">或从合成样例开始</span>
+        <button class="chip" type="button" data-open>林舟 · Lantern 证据面板</button>
+        <button class="chip" type="button" data-open data-view="timeline">时间切片 2024 → 2025</button>
+        <button class="chip" type="button" data-open data-view="quality">同名账号如何区分</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="platforms" aria-labelledby="platforms-title" id="platforms">
+    <div class="section-head">
+      <h2 class="section-title" id="platforms-title">平台索引</h2>
+      <span class="section-en" aria-hidden="true">PLATFORM INDEX</span>
+    </div>
+    <p class="section-lede">同名不等于同一人。每个平台分别登记归属依据；未确认的账号保持独立，不并入同一份档案。</p>
+    <ul class="platform-list">
+<li class="platform"><span class="platform-name">GitHub</span><span class="platform-handle">@linzhou-lab + 1 个候选</span><span class="platform-state">1 个有归属依据 · 1 个待核查</span></li>
+<li class="platform"><span class="platform-name">X</span><span class="platform-handle">@linzhou / @linzhou_notes</span><span class="platform-state">2 个独立候选 · 均待核查</span></li>
+<li class="platform"><span class="platform-name">小红书</span><span class="platform-handle">—</span><span class="platform-state">未发现匹配 · 不代表不存在</span></li>
+<li class="platform"><span class="platform-name">知乎</span><span class="platform-handle">林舟</span><span class="platform-state">1 个同名候选 · 归属待核查</span></li>
+<li class="platform"><span class="platform-name">抖音</span><span class="platform-handle">—</span><span class="platform-state">未配置 · 尚未执行检索</span></li>
+<li class="platform"><span class="platform-name">Bilibili</span><span class="platform-handle">林舟的笔记</span><span class="platform-state">1 个同名候选 · 归属待核查</span></li>
+<li class="platform"><span class="platform-name">LinkedIn</span><span class="platform-handle">—</span><span class="platform-state">读取失败 · 未取得结果</span></li>
+    </ul>
+  </section>
+
+  <section class="folio-section" aria-labelledby="folio-title" id="folio">
+    <div class="section-head">
+      <h2 class="section-title" id="folio-title">档案</h2>
+      <span class="section-en" aria-hidden="true">DOSSIER · No. 001</span>
+    </div>
+
+    <article class="folio">
+      <header class="folio-head">
+        <div class="folio-head-meta">
+          <p class="folio-kicker">公开材料档案 · 合成</p>
+          <p class="folio-no">整理日期 2026-09-21 · 证据 S1–S3</p>
+        </div>
+        <span class="stamp" aria-hidden="true">合成样例</span>
+      </header>
+
+      <div class="folio-subject">
+        <p class="folio-name">林舟</p>
+        <p class="folio-roman">LIN ZHOU · 独立研究者 / 产品设计师</p>
+        <p class="folio-work">作品 <strong>Lantern</strong> · 协作式知识工具</p>
+      </div>
+
+      <div class="folio-evidence">
+        <article class="ev" aria-labelledby="ev-s1">
+          <header class="ev-head">
+            <span class="ev-id" id="ev-s1">S1</span>
+            <span class="ev-type">本人自述</span>
+            <time class="ev-date" datetime="2024-09-12">2024-09-12</time>
+          </header>
+          <p class="ev-loc">个人主页《关于 Lantern》</p>
+          <p class="ev-quote">“我是林舟，正在设计 Lantern。我的代码账号是 linzhou-lab。”</p>
+          <dl class="ev-notes">
+            <dt>能说明</dt>
+            <dd>作者自述参与项目，并明确链接到代码账号。</dd>
+            <dt>还不能说明</dt>
+            <dd>实际参与范围、完整履历或产品效果。</dd>
+          </dl>
+          <button class="ev-open" type="button" data-source="S1">在出处面板查看 S1</button>
+        </article>
+
+        <article class="ev" aria-labelledby="ev-s2">
+          <header class="ev-head">
+            <span class="ev-id" id="ev-s2">S2</span>
+            <span class="ev-type">实际作品</span>
+            <time class="ev-date" datetime="2024-11-08">2024-11-08</time>
+          </header>
+          <p class="ev-loc">Lantern 仓库 README</p>
+          <p class="ev-quote">README 展示证据面板：结论旁列出引用，事实、推断与未知分区呈现。</p>
+          <dl class="ev-notes">
+            <dt>能说明</dt>
+            <dd>README 描述了界面分区，维护者主页链接回个人网站。</dd>
+            <dt>还不能说明</dt>
+            <dd>长期使用结果，或其他项目是否沿用同一规则。</dd>
+          </dl>
+          <button class="ev-open" type="button" data-source="S2">在出处面板查看 S2</button>
+        </article>
+
+        <article class="ev" aria-labelledby="ev-s3">
+          <header class="ev-head">
+            <span class="ev-id" id="ev-s3">S3</span>
+            <span class="ev-type">公开互动</span>
+            <time class="ev-date" datetime="2025-02-14">2025-02-14</time>
+          </header>
+          <p class="ev-loc">公开项目讨论</p>
+          <p class="ev-quote">Mira 询问如何保留被撤回来源；linzhou-lab 回复将显示待复核标记。</p>
+          <dl class="ev-notes">
+            <dt>能说明</dt>
+            <dd>存在一次公开的问答互动。</dd>
+            <dt>还不能说明</dt>
+            <dd>私人关系、友谊或背书；它只是公开互动。</dd>
+          </dl>
+          <button class="ev-open" type="button" data-source="S3">在出处面板查看 S3</button>
+        </article>
+      </div>
+
+      <aside class="folio-note">
+        <p class="folio-note-title">同名提醒 · X</p>
+        <p>X 上的 <span class="mono">@linzhou</span> 与研究对象同名，但归属未确认，按独立账号处理，不合并、不推断为同一人。X 的内容目前不作为任何结论的证据。</p>
+        <button class="folio-note-open" type="button" data-open>打开工作台继续核验</button>
+      </aside>
+    </article>
+  </section>
+
+  <section class="slices" aria-labelledby="slices-title" id="slices">
+    <div class="section-head">
+      <h2 class="section-title" id="slices-title">时间切片</h2>
+      <span class="section-en" aria-hidden="true">TIME SLICES</span>
+    </div>
+    <p class="section-lede">选择一段时间，查看当时可核验的公开材料，以及它支持与不支持什么。全部为合成演示。</p>
+
+    <div class="slice-tabs" role="tablist" aria-label="时间切片">
+      <button class="slice-tab" role="tab" id="slice-tab-1" aria-controls="slice-panel-1"
+              aria-selected="true" data-slice-tab="s1">
+        <span class="slice-date">2024 · 09</span>
+        <span class="slice-label">自述出现</span>
+      </button>
+      <button class="slice-tab" role="tab" id="slice-tab-2" aria-controls="slice-panel-2"
+              aria-selected="false" tabindex="-1" data-slice-tab="s2">
+        <span class="slice-date">2024 · 11</span>
+        <span class="slice-label">作品证据</span>
+      </button>
+      <button class="slice-tab" role="tab" id="slice-tab-3" aria-controls="slice-panel-3"
+              aria-selected="false" tabindex="-1" data-slice-tab="s3">
+        <span class="slice-date">2025 · 02</span>
+        <span class="slice-label">公开讨论</span>
+      </button>
+      <button class="slice-tab" role="tab" id="slice-tab-4" aria-controls="slice-panel-4"
+              aria-selected="false" tabindex="-1" data-slice-tab="s4">
+        <span class="slice-date">2025 之后</span>
+        <span class="slice-label">材料稀疏</span>
+      </button>
+    </div>
+
+    <div class="slice-panels">
+      <div class="slice-panel" role="tabpanel" id="slice-panel-1" aria-labelledby="slice-tab-1"
+           tabindex="0" data-slice-panel="s1">
+        <div class="slice-panel-head">
+          <span class="slice-tag">S1 · 本人自述</span>
+          <time datetime="2024-09-12">2024-09-12</time>
+        </div>
+        <h3 class="slice-title">当期自述，提供一个明确账号线索</h3>
+        <p class="slice-context">林舟在个人主页自述参与 Lantern，并公开链接代码账号 linzhou-lab。这份材料不说明项目最初开始的日期。</p>
+        <dl class="slice-notes">
+          <dt>这段材料能说明</dt>
+          <dd>作者对项目参与的自述，以及明确的代码账号链接。</dd>
+          <dt>这一段还不能说明</dt>
+          <dd>实际参与范围与产品效果；本人自述不升级为独立事实。</dd>
+        </dl>
+      </div>
+
+      <div class="slice-panel" role="tabpanel" id="slice-panel-2" aria-labelledby="slice-tab-2"
+           tabindex="0" data-slice-panel="s2" hidden>
+        <div class="slice-panel-head">
+          <span class="slice-tag">S2 · 实际作品</span>
+          <time datetime="2024-11-08">2024-11-08</time>
+        </div>
+        <h3 class="slice-title">证据面板出现在公开仓库</h3>
+        <p class="slice-context">Lantern 仓库 README 描述了证据面板：引用紧邻结论，事实、推断与未知分区呈现。这条材料能支持界面描述，不能证明使用效果。</p>
+        <dl class="slice-notes">
+          <dt>这段材料能说明</dt>
+          <dd>README 记录的界面分区与相邻引用；最初实现日期仍然未知。</dd>
+          <dt>这一段还不能说明</dt>
+          <dd>长期使用结果、团队其他项目是否沿用，也不能证明它对读者更有效。</dd>
+        </dl>
+      </div>
+
+      <div class="slice-panel" role="tabpanel" id="slice-panel-3" aria-labelledby="slice-tab-3"
+           tabindex="0" data-slice-panel="s3" hidden>
+        <div class="slice-panel-head">
+          <span class="slice-tag">S3 · 公开互动</span>
+          <time datetime="2025-02-14">2025-02-14</time>
+        </div>
+        <h3 class="slice-title">一次公开的项目讨论</h3>
+        <p class="slice-context">有人在公开讨论区就证据面板提出问题，林舟在同一处公开回复。记录到的是问答本身，而不是关系。</p>
+        <dl class="slice-notes">
+          <dt>这段材料能说明</dt>
+          <dd>存在一次可追溯的公开互动，对方询问来源状态，代码账号在同一处作答。</dd>
+          <dt>这一段还不能说明</dt>
+          <dd>两人是朋友、有私人往来或互相背书。公开互动不等于关系，也不等于第三方认可结论。</dd>
+        </dl>
+      </div>
+
+      <div class="slice-panel" role="tabpanel" id="slice-panel-4" aria-labelledby="slice-tab-4"
+           tabindex="0" data-slice-panel="s4" hidden>
+        <div class="slice-panel-head">
+          <span class="slice-tag">无新增材料</span>
+          <time datetime="2025-02-15">2025-02-15 起</time>
+        </div>
+        <h3 class="slice-title">没有可核验的新公开作品记录</h3>
+        <p class="slice-context">这段时间没有找到可核验的新公开材料。空白保持为空白，不用推测填补。</p>
+        <dl class="slice-notes">
+          <dt>这段状态能说明</dt>
+          <dd>当前档案只能停在 2025-02-14，关于之后的判断应保持未知。</dd>
+          <dt>这段状态还不能说明</dt>
+          <dd>“没有公开材料”不等于“没有活动”。未发现与未发生是两件事。</dd>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <section class="boundaries" aria-labelledby="boundaries-title">
+    <div class="boundaries-inner">
+      <div class="section-head section-head-inverse">
+        <h2 class="section-title" id="boundaries-title">边界</h2>
+        <span class="section-en" aria-hidden="true">BOUNDARIES</span>
+      </div>
+      <div class="boundary-grid">
+        <article class="boundary">
+          <h3>不做什么</h3>
+          <ul>
+            <li>不做人脸识别，也不从照片推断身份</li>
+            <li>不追踪私人位置、私信或未授权材料</li>
+            <li>不查询泄露库，不绕过访问控制</li>
+            <li>不用人格评分或无依据的可信度百分比</li>
+          </ul>
+        </article>
+        <article class="boundary">
+          <h3>当前阶段</h3>
+          <ul>
+            <li>本页是交互演示，采集尚未实现</li>
+            <li>不发网络请求，不读取任何真实档案</li>
+            <li>林舟、Lantern 与 S1–S4 全部为合成样例</li>
+            <li>每项结论都保留支持、限制与未知</li>
+          </ul>
+        </article>
+        <article class="boundary">
+          <h3>关于图片</h3>
+          <ul>
+            <li>只核对已授权图片的公开出处</li>
+            <li>用于确认材料来源，不用于识别个人</li>
+            <li>不接受私人影像或带有私人身份的图片</li>
+            <li>无法确认来源的图片一律标记为未知</li>
+          </ul>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <footer class="site-foot">
+    <div class="foot-main">
+      <div class="foot-brand">
+        <p class="foot-logo">StripSearch</p>
+        <p class="foot-tag">Research the person. Trace the evidence.</p>
+      </div>
+      <nav class="foot-nav" aria-label="出口">
+        <button class="foot-link foot-link-strong" type="button" data-open>打开产品工作台</button>
+        <a class="foot-link" href="index.html">A · Signal Atlas ↗</a>
+        <a class="foot-link" href="https://github.com/cubxxw/StripSearch" rel="noopener noreferrer">官方网站 · GitHub 开源仓库</a>
+      </nav>
+    </div>
+    <p class="foot-fine">视觉方向 B · Open Dossier，第二稿。页面内人物、项目与来源均为合成材料，不指向任何真实个人；不使用真实人物照片，不抓取 fixture 网址。</p>
+  </footer>
+</div>
+
+<main id="workspace" hidden></main>
+
+<dialog id="evidence-dialog" aria-labelledby="dialog-title"><div id="evidence-body"></div></dialog>
+<div id="notice" class="notice" role="status"></div>
+
+<script>
+(function () {
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('[data-slice-tab]'));
+  var panels = Array.prototype.slice.call(document.querySelectorAll('[data-slice-panel]'));
+  if (!tabs.length || !panels.length) return;
+
+  function select(id, focus) {
+    tabs.forEach(function (tab) {
+      var active = tab.getAttribute('data-slice-tab') === id;
+      tab.setAttribute('aria-selected', active ? 'true' : 'false');
+      tab.setAttribute('tabindex', active ? '0' : '-1');
+      tab.classList.toggle('is-active', active);
+      if (active && focus) tab.focus();
+    });
+    panels.forEach(function (panel) {
+      panel.hidden = panel.getAttribute('data-slice-panel') !== id;
+    });
+  }
+
+  tabs.forEach(function (tab, index) {
+    tab.addEventListener('click', function () {
+      select(tab.getAttribute('data-slice-tab'), false);
+    });
+    tab.addEventListener('keydown', function (event) {
+      var next = null;
+      if (event.key === 'ArrowRight' || event.key === 'ArrowDown') next = (index + 1) % tabs.length;
+      else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') next = (index - 1 + tabs.length) % tabs.length;
+      else if (event.key === 'Home') next = 0;
+      else if (event.key === 'End') next = tabs.length - 1;
+      if (next === null) return;
+      event.preventDefault();
+      select(tabs[next].getAttribute('data-slice-tab'), true);
+    });
+  });
+})();
+</script>
+</body>
+</html>

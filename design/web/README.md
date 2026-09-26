@@ -1,5 +1,7 @@
 # StripSearch Evidence Terminal 原型
 
+2026-09-21：[已选 A · Signal Atlas](next/README.md)，深化交互图谱、三步研究引导与数据源配置；B 保留为存档。这是独立合成原型，尚未替换本页基线或真实 Web alpha。
+
 `index.html` 是 StripSearch 的**最终本地交互设计原型**：以 Open Design 方向 A（Evidence Terminal）为起点收敛，保留细网格与绿色品牌，支持纸白 / 深绿亮色和黑 / 荧光绿深色，默认随系统色调实时切换。它演示输入校验、同名候选确认、可观察研究活动与进度、结构化回答、来源排除与撤销、复制 / 下载报告。
 
 这是一个**本地合成演示**，尚未接入真实研究引擎：

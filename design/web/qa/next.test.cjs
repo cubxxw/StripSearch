@@ -1,0 +1,46 @@
+// Offline behavioral checks for the independent v2 design prototype.
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const { JSDOM } = require('jsdom');
+const root = path.join(__dirname, '../next');
+let checks = 0;
+for (const page of ['dossier.html']) {
+ const html = fs.readFileSync(path.join(root, page), 'utf8');
+ const dom = new JSDOM(html, { url: `http://localhost/${page}`, runScripts: 'outside-only', pretendToBeVisual: true });
+ const w = dom.window, d = w.document, timers = new Map(); let tid = 0, exported = null;
+ w.scrollTo = () => {};
+ w.matchMedia = () => ({ matches: false, addEventListener() {} });
+ w.setTimeout = (fn, ms) => { timers.set(++tid, { fn, ms }); return tid; };
+ w.clearTimeout = id => timers.delete(id);
+ w.HTMLDialogElement.prototype.showModal = function () { this.open = true; };
+ w.HTMLDialogElement.prototype.close = function () { this.open = false; this.dispatchEvent(new w.Event('close')); };
+ w.Blob = class { constructor(parts) { this.text = parts.join(''); } };
+ w.URL.createObjectURL = blob => { exported = blob.text; return 'blob:local'; };
+ w.URL.revokeObjectURL = () => {};
+ w.HTMLAnchorElement.prototype.click = function () {};
+ w.fetch = () => { throw Error('Offline prototype must not fetch'); };
+ w.XMLHttpRequest.prototype.open = () => { throw Error('Offline prototype must not request'); };
+ for (const script of d.querySelectorAll('script:not([src])')) w.eval(script.textContent);
+ w.eval(fs.readFileSync(path.join(root, 'demo.js'), 'utf8'));
+ const $ = s => { const el = d.querySelector(s); assert.ok(el, `Missing ${s}`); return el; };
+ const click = s => { const el = $(s); el.focus(); el.click(); };
+ const test = (name, fn) => { fn(); checks++; console.log(`PASS ${page}: ${name}`); };
+ const tick = () => { const pair = [...timers.entries()].find(([,t]) => t.ms === 750); assert.ok(pair, 'scheduled research step'); timers.delete(pair[0]); pair[1].fn(); };
+ test('disclosure and shared entry', () => { assert.match(d.body.textContent, /交互演示 · 合成样例/); click('[data-open]'); assert.equal($('#workspace').hidden, false); });
+ test('platform cardinality and uncertain candidates stay separate', () => { assert.equal(d.querySelectorAll('.account-row').length, 7); click('[data-filter="x"]'); assert.equal(d.querySelectorAll('.account-row').length, 2); assert.equal(d.querySelectorAll('.account-state.uncertain').length, 2); });
+ test('unknown accounts cannot supply facts', () => { click('[data-account="x1"]'); assert.match($('#evidence-body').textContent, /不进入人物事实或时间线/); assert.equal($('#evidence-body').querySelectorAll('[data-source]').length, 0); click('[data-close]'); });
+ test('zero results, failed retrieval, and unconfigured are distinct', () => { click('[data-filter="xiaohongshu"]'); assert.match($('#report-content').textContent, /未发现匹配/); click('[data-filter="linkedin"]'); assert.match($('#report-content').textContent, /读取失败/); click('[data-retry]'); assert.match($('#report-content').textContent, /合成重试已完成/); click('[data-filter="douyin"]'); assert.match($('#report-content').textContent, /尚未配置/); });
+ test('nested evidence closes back to original account trigger', () => { click('[data-filter="github"]'); click('[data-account="gh1"]'); click('#evidence-body [data-source="S2"]'); click('[data-close]'); assert.equal(d.activeElement.dataset.account, 'gh1'); });
+ test('withdrawal invalidates account and maintains focus after DOM replacement', () => { click('[data-account="gh1"]'); click('#evidence-body [data-source="S2"]'); click('[data-withdraw]'); assert.match($('#evidence-body').textContent, /来源已撤回/); click('[data-close]'); assert.equal(d.activeElement.dataset.account, 'gh1'); assert.match($('[data-account="gh1"]').textContent, /待复核/); });
+ test('withdrawal propagates into facts, timeline and identity-dependent interaction', () => { click('[data-view="findings"]'); assert.equal(d.querySelectorAll('.finding .tag').length, 3); assert.match(d.querySelectorAll('.finding .tag')[0].textContent, /待复核/); assert.match(d.querySelectorAll('.finding .tag')[1].textContent, /待复核/); click('[data-view="timeline"]'); assert.match($('#report-content').textContent, /作品记录出现证据分区 · 待复核/); click('[data-view="relations"]'); assert.match($('#report-content').textContent, /关联待复核/); });
+ test('download carries withdrawal, independent candidates and platform failures', () => { click('[data-export]'); assert.match(exported, /合成样例/); assert.match(exported, /\[待复核：S2 已撤回\]/); assert.match(exported, /@linzhou_notes — 归属待核查/); assert.match(exported, /未配置，未执行检索/); assert.match(exported, /合成重试后未发现匹配/); });
+ test('restoration clears stale dependency states', () => { click('[data-restore]'); click('[data-view="accounts"]'); assert.match($('[data-account="gh1"]').textContent, /有归属依据/); click('[data-export]'); assert.doesNotMatch(exported, /待复核：S2 已撤回/); });
+ test('empty scenario suppresses report and export, permits recovery', () => { $('#scenario').value='empty'; $('#scenario').dispatchEvent(new w.Event('change',{bubbles:true})); assert.match($('#report-content').textContent, /没有匹配结果/); assert.equal($('[data-export]').disabled,true); click('[data-normal]'); assert.equal($('[data-export]').disabled,false); });
+ test('replay blocks download and pause cancels progression', () => { click('[data-run]'); assert.equal($('[data-export]').disabled,true); tick(); click('[data-pause]'); assert.equal([...timers.values()].filter(t=>t.ms===750).length,0); assert.match($('.run-state').textContent,/已暂停/); click('[data-pause]'); tick(); tick(); tick(); assert.equal($('[data-export]').disabled,false); assert.equal(d.querySelector('.run-state'),null); });
+ test('quality view has five evidence-linked checks without fabricated rates', () => { click('[data-view="quality"]'); assert.equal(d.querySelectorAll('.quality-row').length,5); assert.doesNotMatch($('#report-content').textContent,/\d+%/); });
+ test('new research clears withdrawn state and returns to entry', () => { click('[data-new]'); assert.equal($('#workspace').hidden,true); click('[data-open]'); assert.equal(d.querySelector('#workspace .status-banner'),null); assert.equal(d.querySelectorAll('.account-row').length,7); });
+ if (page==='dossier.html') test('time slices support keyboard and distinct material',()=>{click('[data-home]'); click('[data-slice-tab="s2"]'); assert.equal($('#slice-panel-2').hidden,false); $('[data-slice-tab="s2"]').dispatchEvent(new w.KeyboardEvent('keydown',{key:'End',bubbles:true})); assert.equal($('#slice-panel-4').hidden,false); assert.match($('#slice-panel-4').textContent,/没有活动/);});
+ dom.window.close();
+}
+console.log(`${checks} offline behavioral checks passed. No provider, network, model, or benchmark validation.`);
