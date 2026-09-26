@@ -95,8 +95,26 @@ test('a new follow-up cannot reuse identity after its parent anchor was withdraw
  assert.equal(calls,0);assert.equal(store.research.checkpoint(child.id)?.identity,null);assert.equal(store.buildCanonicalView(child).personObject,undefined);db.close();
 });
 
-test('overlapping verification verdicts cannot publish a claim',async()=>{
+for(const [label,verdict] of [
+ ['overlapping',{supported:[0],rejected:[{index:0,reason:'wrong person'}]}],
+ ['out-of-range',{supported:[1],rejected:[]}],
+ ['malformed',{supported:[0]}],
+] as const)test(`${label} verification preserves only exact quotes, never the proposed synthesis`,async()=>{
  const {db,store,run}=setup();
- const result=await runResearch({store,run,signal:new AbortController().signal,tools:{async execute(){return {pages:[profile],requests:1,bytes:10,estimatedUsd:0,credits:null,limitations:[]};}},planner:{async decide(input){return input.mode==='verify'?{supported:[0],rejected:[{index:0,reason:'wrong person'}]}:{action:'finish',claims:[{sourceKey:'S1',quote:profile.text}],unknowns:[]};}}});
- assert.equal(result.stopReason,'invalid_verification');assert.equal(result.observations.length,0);db.close();
+ const unsupported='Ada won a major prize.';
+ const result=await runResearch({store,run,signal:new AbortController().signal,tools:{async execute(){return {pages:[profile],requests:1,bytes:10,estimatedUsd:0,credits:null,limitations:[]};}},planner:{async decide(input){return input.mode==='verify'?verdict:{action:'finish',claims:[{sourceKey:'S1',quote:profile.text,statement:unsupported,kind:'attributed_statement'}],unknowns:[]};}}});
+ assert.equal(result.stopReason,'verification_unavailable');assert.equal(result.state,'partial');
+ assert.deepEqual(result.observations.map(o=>({statement:o.statement,kind:o.kind})),[{statement:profile.text,kind:'page_statement'}]);
+ assert.equal(JSON.stringify(result).includes(unsupported),false);
+ assert.ok(result.limitations.some(s=>s.includes('未通过')&&s.includes('摘录')));
+ assert.equal(store.research.checkpoint(run.id)?.pendingClaims,undefined);db.close();
+});
+
+for(const mode of ['abort','store'] as const)test(`cancel during verification (${mode}) cannot publish fallback excerpts`,async()=>{
+ const {db,store,run}=setup();const abort=new AbortController();
+ const task=runResearch({store,run,signal:abort.signal,tools:{async execute(){return {pages:[profile],requests:1,bytes:10,estimatedUsd:0,credits:null,limitations:[]};}},planner:{async decide(input){
+  if(input.mode==='verify'){store.requestCancel(run.id);if(mode==='abort')abort.abort(new Error('cancelled verification'));return {supported:[1],rejected:[]};}
+  return {action:'finish',claims:[{sourceKey:'S1',quote:profile.text,statement:'Ada won a major prize.'}],unknowns:[]};
+ }}});
+ await assert.rejects(task);assert.deepEqual(store.research.checkpoint(run.id)?.claims,[]);db.close();
 });
