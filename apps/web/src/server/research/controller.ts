@@ -92,25 +92,32 @@ export async function runResearch(options:ResearchOptions):Promise<ProviderResul
  };
  const verify=async():Promise<ProviderResult>=>{
   const claims=checkpoint.pendingClaims??[];
+  const quoteFallback=(reason:'verification_budget'|'verification_unavailable'):ProviderResult=>{
+   options.signal.throwIfAborted();store.research.assertActive(run.id);
+   const pages=stillActivePages();
+   checkpoint.claims=claims.filter(c=>pages.some(p=>p.sourceKey===c.sourceKey&&p.text.includes(c.quote))).map(c=>({...c,statement:c.quote,kind:'page_statement'}));delete checkpoint.pendingClaims;
+   checkpoint.unknowns.push('综合结论未通过独立语义核验，仅保留来源逐字摘录；摘录不代表结论已核实。');
+   return finish(reason,'partial');
+  };
   if(checkpoint.steps>=limits.modelCalls||store.research.budget(run.id,limits).modelCalls>=limits.modelCalls){
-   checkpoint.claims=claims.map(c=>({...c,statement:c.quote,kind:'page_statement'}));delete checkpoint.pendingClaims;
-   checkpoint.unknowns.push('综合结论尚未获得独立语义核对，仅保留来源摘录。');return finish('verification_budget','partial');
+   return quoteFallback('verification_budget');
   }
   progress('verifying');
   let checked:unknown;
   try{checked=await ask('verify',claims);}catch(error){
    if(options.signal.aborted)throw error;
-   checkpoint.claims=claims.map(c=>({...c,statement:c.quote,kind:'page_statement'}));delete checkpoint.pendingClaims;
-   checkpoint.unknowns.push('综合结论未完成语义核对，仅保留来源摘录。');return finish('verification_unavailable','partial');
+   return quoteFallback('verification_unavailable');
   }
   active();
-  if(!object(checked)||!Array.isArray(checked.supported)||!Array.isArray(checked.rejected))throw new ResearchStop('invalid_verification');
+  if(!object(checked)||!Array.isArray(checked.supported)||!Array.isArray(checked.rejected))return quoteFallback('verification_unavailable');
   const supportedIndexes=checked.supported;
-  const rejectedIndexes=checked.rejected.map(item=>{
-   if(!object(item)||!Number.isInteger(item.index)||typeof item.reason!=='string'||!item.reason.trim())throw new ResearchStop('invalid_verification');return item.index as number;
-  });
+  const rejectedIndexes:number[]=[];
+  for(const item of checked.rejected){
+   if(!object(item)||!Number.isInteger(item.index)||typeof item.reason!=='string'||!item.reason.trim())return quoteFallback('verification_unavailable');
+   rejectedIndexes.push(item.index as number);
+  }
   const partition=[...supportedIndexes,...rejectedIndexes];
-  if(partition.some(i=>!Number.isInteger(i)||Number(i)<0||Number(i)>=claims.length)||new Set(partition).size!==partition.length||partition.length!==claims.length)throw new ResearchStop('invalid_verification');
+  if(partition.some(i=>!Number.isInteger(i)||Number(i)<0||Number(i)>=claims.length)||new Set(partition).size!==partition.length||partition.length!==claims.length)return quoteFallback('verification_unavailable');
   const supported=new Set(supportedIndexes as number[]);
   checkpoint.claims=claims.filter((_c,index)=>supported.has(index));delete checkpoint.pendingClaims;checkpoint.steps++;
   if(Array.isArray(checked.rejected))for(const item of checked.rejected)if(object(item)&&typeof item.reason==='string')checkpoint.unknowns.push(sanitizeText(item.reason,500));
