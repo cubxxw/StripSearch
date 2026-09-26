@@ -78,3 +78,24 @@ test('DSH never forwards a second model request after an invented unavailable to
   }), /without a structured decision/);
   assert.equal(count, 1);
 });
+
+test('DSH decodes one JSON-encoded object in a structured tool receipt', { timeout: 30_000 }, async () => {
+  const verdict = { supported: [0, 2], rejected: [{ index: 1, reason: 'The quote does not establish personal contribution.' }] };
+  let calls = 0;
+  const result = await runDshDecision({
+    prompt: 'Verify the supplied synthetic claims.', signal: new AbortController().signal,
+    model: 'deepseek-flash', timeoutMs: 15_000,
+    invoke: async () => { calls++; return { status: 200, body: response(JSON.stringify(verdict)) }; },
+  });
+  assert.deepEqual(result, verdict);
+  assert.equal(calls, 1);
+});
+
+test('DSH rejects recursively encoded or non-object decisions', { timeout: 30_000 }, async () => {
+  for (const value of [JSON.stringify(JSON.stringify({ supported: [0], rejected: [] })), '[0,1]']) {
+    await assert.rejects(runDshDecision({
+      prompt, signal: new AbortController().signal, model: 'deepseek-flash', timeoutMs: 15_000,
+      invoke: async () => ({ status: 200, body: response(value) }),
+    }), /decision must be a JSON object/);
+  }
+});

@@ -139,7 +139,7 @@ export async function runDshDecision(options: DshDecisionOptions): Promise<unkno
     const address = server.address();
     if (!address || typeof address === 'string') throw new Error('DSH proxy failed to bind');
     const pluginPath = join(runDir, 'submit-decision.mjs');
-    await writeFile(pluginPath, `import { defineTool } from ${JSON.stringify(toolModuleUrl)};\nexport const name = 'stripsearch-submit-decision';\nexport const inject = ['tools'];\nexport function apply(ctx) { ctx.tools.register(defineTool({\n name:'submit_decision', description:'Submit the final structured decision exactly once. Follow the requested JSON schema.',\n parameters:{decision:{type:'json',required:true}},\n output:{schema:{type:'json'},render:(_args,value)=>[{type:'text',text:JSON.stringify(value)}]},\n async execute(args,context){context.signal.throwIfAborted();return {decision:args.decision};}\n})); }\n`, { mode: 0o600 });
+    await writeFile(pluginPath, `import { defineTool } from ${JSON.stringify(toolModuleUrl)};\nexport const name = 'stripsearch-submit-decision';\nexport const inject = ['tools'];\nexport function apply(ctx) { ctx.tools.register(defineTool({\n name:'submit_decision', description:'Submit the final structured decision exactly once. The decision value must be a JSON object, never a JSON-encoded string. Follow the requested JSON schema.',\n parameters:{decision:{type:'json',required:true}},\n output:{schema:{type:'json'},render:(_args,value)=>[{type:'text',text:JSON.stringify(value)}]},\n async execute(args,context){context.signal.throwIfAborted();return {decision:args.decision};}\n})); }\n`, { mode: 0o600 });
     const disabled = ['session-log-deepseek', 'plugin-package-inventory-deepseek', 'persistent-bash', 'persistent-pwsh', 'terminal-bash', 'terminal-pwsh', 'pty', 'subprocess', 'mcp-resources', 'llm-retry'];
     const patchPath = join(runDir, 'restricted.patch.yml');
     const patch = disabled.map(id => `- id: ${id}\n  disabled: true\n`).join('') +
@@ -167,7 +167,14 @@ export async function runDshDecision(options: DshDecisionOptions): Promise<unkno
         const rendered = message.content.filter((block: unknown): block is Record<string, unknown> => record(block) && block.type === 'text' && typeof block.text === 'string').map(block => block.text).join('');
         const result: unknown = JSON.parse(rendered);
         if (!record(result) || !Object.hasOwn(result, 'decision')) throw new Error('Malformed DSH decision receipt');
-        resolveDecision(result.decision);
+        // Some providers encode the tool's JSON value as one JSON string.
+        // Decode exactly once; all semantic and evidence validation stays in
+        // the controller. Never accept arrays, primitives or recursive wrappers.
+        const value: unknown = typeof result.decision === 'string'
+          ? JSON.parse(result.decision)
+          : result.decision;
+        if (!record(value)) throw new Error('DSH decision must be a JSON object');
+        resolveDecision(value);
       } catch (error) { rejectDecision(error); }
     } }).then(() => { throw new Error('DSH finished without a structured decision'); });
     return await Promise.race([decision, run]);

@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createRequire } from 'node:module';
+import { readdir } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { chromium, type LaunchOptions } from 'playwright-core';
 import { createFakeFactory, sampleResult } from './fakes.js';
 import { startTestServer, waitFor } from './harness.js';
 import { renderReportHtml } from '../shared/report-html.js';
@@ -77,4 +80,28 @@ test('PDF rejects evidence changes during rendering even when the run revision i
   const response = await server.client.request(`/api/runs/${id}/export?format=pdf&revision=${view.revision}`);
   assert.equal(server.store.getRun(id)?.revision, view.revision);
   assert.equal(response.status, 409);
+});
+
+
+test('PDF works with an unwritable host home and removes its temporary browser home', { skip: !chromiumExecutable() }, async t => {
+  const launch = chromium.launch.bind(chromium);
+  t.mock.method(chromium, 'launch', async (options: LaunchOptions) => {
+    assert.ok(options.env);
+    assert.deepEqual(Object.keys(options.env!).filter(key => !['PATH', 'LANG', 'TZ', 'TMPDIR', 'HOME', 'XDG_CONFIG_HOME', 'XDG_CACHE_HOME'].includes(key)), []);
+    return launch(options);
+  });
+  const keys = ['HOME', 'XDG_CONFIG_HOME', 'XDG_CACHE_HOME'] as const;
+  const prior = Object.fromEntries(keys.map(key => [key, process.env[key]]));
+  const before = new Set((await readdir(tmpdir())).filter(name => name.startsWith('stripsearch-pdf-')));
+  for (const key of keys) process.env[key] = '/nonexistent/stripsearch-readonly-home';
+  try {
+    const pdf = await renderReportPdf('<!doctype html><meta charset="utf-8"><h1>人物研究中文 PDF</h1><p>合成测试：公开资料、出处、未知。</p>');
+    assert.equal(pdf.subarray(0, 5).toString(), '%PDF-');
+    assert.ok(pdf.byteLength > 1000);
+    for (const key of keys) assert.equal(process.env[key], '/nonexistent/stripsearch-readonly-home');
+    const remaining = (await readdir(tmpdir())).filter(name => name.startsWith('stripsearch-pdf-') && !before.has(name));
+    assert.deepEqual(remaining, []);
+  } finally {
+    for (const key of keys) { if (prior[key] === undefined) delete process.env[key]; else process.env[key] = prior[key]; }
+  }
 });

@@ -1,4 +1,7 @@
 import { existsSync } from 'node:fs';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { chromium, type Browser } from 'playwright-core';
 import { HttpError } from '../http/errors.js';
 
@@ -17,9 +20,13 @@ export async function renderReportPdf(html: string): Promise<Buffer> {
   if (Buffer.byteLength(html) > 2 * 1024 * 1024) throw new HttpError(413, 'report_too_large', '报告超出 PDF 大小限制，请下载 JSON。');
   busy = true;
   let browser: Browser | undefined;
+  let browserHome: string | undefined;
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
-    browser = await chromium.launch({ executablePath, headless: true, timeout: 10_000, args: ['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--disable-background-networking'] });
+    // Chromium's crash handler needs a writable home even when its profile is in /tmp.
+    browserHome = await mkdtemp(join(tmpdir(), 'stripsearch-pdf-'));
+    const browserEnv = Object.fromEntries(['PATH', 'LANG', 'TZ', 'TMPDIR'].flatMap(key => process.env[key] === undefined ? [] : [[key, process.env[key]!] ]));
+    browser = await chromium.launch({ env: { ...browserEnv, HOME: browserHome, XDG_CONFIG_HOME: browserHome, XDG_CACHE_HOME: browserHome }, executablePath, headless: true, timeout: 10_000, args: ['--no-sandbox', '--disable-dev-shm-usage', '--disable-gpu', '--disable-background-networking'] });
     timer = setTimeout(() => { void browser?.close().catch(() => undefined); }, 15_000);
     const context = await browser.newContext({ javaScriptEnabled: false, serviceWorkers: 'block', offline: true });
     await context.route('**/*', route => route.abort());
@@ -30,6 +37,9 @@ export async function renderReportPdf(html: string): Promise<Buffer> {
     throw new HttpError(503, 'pdf_unavailable', 'PDF 生成失败，请重试或下载 HTML。');
   } finally {
     if (timer) clearTimeout(timer);
-    try { await browser?.close().catch(() => undefined); } finally { busy = false; }
+    try {
+      await browser?.close().catch(() => undefined);
+      if (browserHome) await rm(browserHome, { recursive: true, force: true }).catch(() => undefined);
+    } finally { busy = false; }
   }
 }
