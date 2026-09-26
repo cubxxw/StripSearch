@@ -147,7 +147,10 @@ export async function runDshDecision(options: DshDecisionOptions): Promise<unkno
     await writeFile(patchPath, patch, { mode: 0o600 });
     harness = new DeepSeekHarness({
       profile: 'sdk-minimal', patches: [patchPath], dshHome: join(home, 'dsh'), cwd, processCwd: cwd,
-      env: { PATH: '/usr/bin:/bin', HOME: home, XDG_CONFIG_HOME: join(home, 'config'), XDG_CACHE_HOME: join(home, 'cache'), XDG_DATA_HOME: join(home, 'data'), TMPDIR: temp, TMP: temp, TEMP: temp, LANG: 'C.UTF-8', STRIPSEARCH_DSH_PROXY_TOKEN: proxyToken },
+      // The pinned loader otherwise copies native bindings into TMPDIR. Linux
+      // noexec tmpfs cannot dlopen those copies; load the installed binary in
+      // the read-only application directory while keeping temporary data noexec.
+      env: { PATH: '/usr/bin:/bin', HOME: home, XDG_CONFIG_HOME: join(home, 'config'), XDG_CACHE_HOME: join(home, 'cache'), XDG_DATA_HOME: join(home, 'data'), TMPDIR: temp, TMP: temp, TEMP: temp, LANG: 'C.UTF-8', NARB_DISABLE_NATIVE_CACHE: '1', STRIPSEARCH_DSH_PROXY_TOKEN: proxyToken },
       provider: 'deepseek-official', model: options.model, maxTokens,
       initializeTimeoutMs: Math.min(timeoutMs, 15_000), requestTimeoutMs: Math.min(timeoutMs, 15_000),
       shutdownTimeoutMs: 1_000, disposeEofGraceMs: 1_000, disposeGraceMs: 1_000,
