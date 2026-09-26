@@ -254,6 +254,35 @@ test('selecting a task shows prompt, seeds, checks, provisional observation and 
   assert.ok(query(h.root, '[data-action="export-spec"]'));
 });
 
+test('a failed task detail can be retried without duplicate in-flight or loaded requests', async () => {
+  const task = researchTaskFor('rtask_retry');
+  const h = harness([task]);
+  let calls = 0;
+  let completeRetry!: (value: ResearchTaskView) => void;
+  h.detailHandler = async () => {
+    calls += 1;
+    if (calls === 1) throw new ApiError(503, 'unavailable', '暂时无法读取。');
+    return new Promise<ResearchTaskView>((resolve) => { completeRetry = resolve; });
+  };
+  await h.workbench.open(null);
+  const clickTask = () => query<HTMLButtonElement>(h.root, '[data-research-task-id="rtask_retry"]')!.click();
+  clickTask();
+  await tick();
+  assert.equal(calls, 1);
+  assert.equal(Boolean(h.workbench.state.researchDetail), false);
+  assert.match(h.toasts.at(-1)?.message ?? '', /暂时无法读取/);
+
+  clickTask();
+  assert.equal(calls, 2, 'the same task must allow retry after a failed request');
+  clickTask();
+  assert.equal(calls, 2, 'a pending retry must not be duplicated');
+  completeRetry(task);
+  await tick();
+  assert.equal(h.workbench.state.researchDetail?.taskId, task.taskId);
+  clickTask();
+  assert.equal(calls, 2, 'loaded task details should remain cached');
+});
+
 test('the import dialog posts real specs and only reports true successes', async () => {
   const h = harness();
   await h.workbench.open(null);

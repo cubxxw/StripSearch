@@ -819,7 +819,10 @@ export function createReviewWorkbench(deps: ReviewWorkbenchDeps): ReviewWorkbenc
         researchItem?.dataset.researchTaskId &&
         researchItem.classList.contains('review-research-item')
       ) {
-        if (researchItem.dataset.researchTaskId !== state.researchTaskId) {
+        if (
+          researchItem.dataset.researchTaskId !== state.researchTaskId ||
+          (!state.researchLoading && !state.researchDetail)
+        ) {
           void selectResearchTask(researchItem.dataset.researchTaskId);
         }
       }
