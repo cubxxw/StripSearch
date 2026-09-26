@@ -24,4 +24,6 @@
 
 运行检查：`npm --prefix apps/web run typecheck`、`npm --prefix apps/web test`、`npm --prefix apps/web run build`、`npm --prefix apps/web run eval`、`python3 scripts/check_design.py`。合成测试验证执行与安全边界；真实公开账号验收检验供应商和实际报告，两者均不等同于人工质量 benchmark。原始材料和运行回执保存在授权私有工作区，不进入公开仓库。
 
+发布镜像另由 CI 在无外网、非 root、只读文件系统及 noexec 临时目录下执行 `deploy/runtime-smoke.mjs`：真实 DSH runtime 处理一次合成模型响应，再生成中文 PDF 并核对临时目录清理。DSH 关闭原生依赖的临时目录复制缓存，直接加载镜像中锁定的依赖文件；不放宽容器挂载权限。
+
 通过现有不可变 SHA 容器发布，SQLite 先备份，健康和 `/release.json` 不匹配时恢复旧镜像。新增表为兼容迁移，旧 GitHub/Exa 显式 API 和历史报告继续可读。CLI/MCP、电话/邮箱定位、跨平台自动身份合并与批量质量评测不在本次范围。
