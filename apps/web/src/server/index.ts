@@ -13,12 +13,18 @@ import { migrateDatabase } from './db/migrate.js';
 import { Runner } from './services/runner.js';
 import { ReviewStore } from './review-store.js';
 import { Store } from './store.js';
+import type { ResearchTools } from './research/tool-contracts.js';
+import { createResearchTools } from './research/toolkit.js';
+import { LIMITS } from '../shared/limits.js';
+import type { ResearchPlanner } from './research/planner.js';
 import type { DB } from './db/index.js';
 
 export interface BootstrapOverrides {
   providerFactory?: ProviderFactory;
   transport?: HttpTransport;
   clientDir?: string;
+  researchTools?: ResearchTools;
+  researchPlanner?: ResearchPlanner;
 }
 
 export interface BootstrappedApp {
@@ -49,10 +55,17 @@ export async function bootstrap(
     store,
     config,
     providerFactory,
-    transport: overrides.transport ?? defaultTransport
+    transport: overrides.transport ?? defaultTransport,
+    researchTools: overrides.researchTools ?? createResearchTools({
+      transport: overrides.transport ?? defaultTransport, exaApiKey: config.exaApiKey,
+      firecrawlApiKey: config.firecrawlApiKey ?? null, tikhubApiKey: config.tikhubApiKey ?? null,
+      githubToken: config.githubToken, timeoutMs: LIMITS.providerTimeoutMs, maxBytes: LIMITS.providerMaxBytes
+    }),
+    researchPlanner: overrides.researchPlanner
   });
   const clientDir = overrides.clientDir ?? defaultClientDir();
   const app = createApp({ config, store, reviewStore, auth, runner, clientDir });
+  void runner.pump();
   return { config, db, store, reviewStore, runner, app, interrupted };
 }
 

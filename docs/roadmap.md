@@ -6,6 +6,8 @@
 
 产品、研究方法、架构、接口、工具取舍、evaluation、合成样例与工作模板。公开材料不含真实个人档案。当前静态检查仅验证设计文件一致性。独立 Web alpha 的运行范围与验收见 [Web 运行时契约](web-runtime.md)，不视为后续里程碑整体完成。
 
+2026-09-26 Web 增量已实现有预算的 DSH 研究循环、Exa/TikHub/Firecrawl 工具、Person Object 与 HTML/PDF 导出；范围和验证边界见[实现说明](person-research-release.md)。这不替代下述 30 页面试验、人工裁决、CLI/MCP 或质量对照验收。
+
 ## M1 · 最小可审计闭环
 
 初始化前置调研与探针见 [实施方案](initialization-research.md) 和 [验证记录](initialization-validation.md)。探针不代表 M1 已完成；生产 schema、研究语义闭环与人工裁决仍按以下验收推进。
